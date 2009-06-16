@@ -725,6 +725,7 @@ bool OgreSystem::renderOneFrame(Time curFrameTime, Duration deltaTime) {
 }
 static Time debugStartTime = Time::now();
 bool OgreSystem::tick(){
+    SILOG(ogre,warning,"OgreSystem::tick");     ///dbm
     GraphicsResourceManager::getSingleton().computeLoadedSet();
     Time curFrameTime(Time::now());
     Time finishTime(curFrameTime + desiredTickRate()); // arbitrary
