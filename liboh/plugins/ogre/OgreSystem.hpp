@@ -40,7 +40,6 @@
 #include <OgrePrerequisites.h>
 #include <OgreResourceManager.h>
 #include <OgrePixelFormat.h>
-
 //Thank you Apple:
 // /System/Library/Frameworks/CoreServices.framework/Headers/../Frameworks/CarbonCore.framework/Headers/MacTypes.h
 #ifdef nil
@@ -49,6 +48,8 @@
 
 namespace Meru {
 class CDNArchivePlugin;
+class ResourceFileUpload;
+typedef int ResourceUploadStatus;
 }
 
 namespace Ogre {
@@ -56,8 +57,17 @@ struct RaySceneQueryResultEntry;
 }
 
 namespace Sirikata {
+class ProxyPositionObject;
 namespace Input {
 class SDLInputManager;
+}
+namespace Task {
+class EventResponse;
+class Event;
+typedef std::tr1::shared_ptr<Event> EventPtr;
+}
+namespace Transfer {
+class TransferManager;
 }
 /** Namespace for the OGRE Graphics Plugin: see class OgreSystem. */
 namespace Graphics {
@@ -70,6 +80,8 @@ class OgreSystem: public TimeSteppedSimulation {
     class MouseHandler; // Defined in OgreSystemMouseHandler.cpp.
     friend class MouseHandler;
     MouseHandler *mMouseHandler;
+    class Transfer::TransferManager *mTransferManager;
+    Task::EventResponse performUpload(Task::EventPtr ev);
     void allocMouseHandler();
     void destroyMouseHandler();
 
@@ -123,6 +135,7 @@ public:
     const OptionSet*getOptions()const{
         return mOptions;
     }
+    void selectObject(Entity *obj, bool reset=true); // Defined in OgreSystemMouseHandler.cpp
     const Vector3d& getOffset()const {return mFloatingPointOffset;}
     void destroyRenderTarget(const String &name);
     ///creates or restores a render target. if name is 0 length it will return the render target associated with this OgreSystem
@@ -135,6 +148,7 @@ public:
         delete os;
         return NULL;
     }
+    void uploadFinished(const std::map<Meru::ResourceFileUpload,Meru::ResourceUploadStatus>&);
     Entity* getEntity(const SpaceObjectReference &proxyId) const {
         SceneEntitiesMap::const_iterator iter = mSceneEntities.find(proxyId);
         if (iter != mSceneEntities.end()) {
@@ -152,7 +166,7 @@ public:
                      int which=0) const;
     virtual Duration desiredTickRate()const;
     ///returns if rendering should continue
-    virtual bool tick();
+    virtual bool tick();    
     Ogre::RenderTarget *getRenderTarget();
     static Ogre::Root *getRoot();
     Ogre::SceneManager* getSceneManager();

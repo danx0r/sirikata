@@ -54,6 +54,7 @@ class SDLInputManager : public InputManager {
     std::vector<SDLMousePtr> mMice;
     std::vector<SDLJoystickPtr> mJoy;
     unsigned int mWidth, mHeight;
+    bool mHasKeyboardFocus;
     static int modifiersFromSDL(int sdlMod);
 public:
     OptionValue*mDragDeadband;
@@ -75,6 +76,8 @@ public:
                     bool grabCursor,
                     void *&currentWindowData);
     bool tick(Time currentTime, Duration frameTime);
+
+	void filesDropped(const std::vector<std::string> &files);
 
     virtual bool isModifierDown(int modifier) const;
     virtual bool isCapsLockDown() const;

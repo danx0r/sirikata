@@ -47,6 +47,8 @@
 #include <task/Time.hpp>
 #include <task/EventManager.hpp>
 #include <SDL_keysym.h>
+#include <boost/math/special_functions/fpclassify.hpp>
+
 
 #include <map>
 
@@ -162,7 +164,7 @@ class OgreSystem::MouseHandler {
     }
 
     ///////////////////// CLICK HANDLERS /////////////////////
-
+public:
     void clearSelection() {
         for (SelectedObjectMap::const_iterator selectIter = mSelectedObjects.begin();
              selectIter != mSelectedObjects.end(); ++selectIter) {
@@ -171,6 +173,7 @@ class OgreSystem::MouseHandler {
         }
         mSelectedObjects.clear();
     }
+private:
 
     int mWhichRayObject;
     EventResponse selectObject(EventPtr ev, int direction) {
@@ -205,7 +208,7 @@ class OgreSystem::MouseHandler {
             SelectedObjectMap::iterator selectIter = mSelectedObjects.find(mouseOver->id());
             if (selectIter == mSelectedObjects.end()) {
                 SILOG(input,info,"Added selection " << mouseOver->id());
-                mSelectedObjects.insert(SelectedObjectMap::value_type(mouseOver->id(), Location()));
+                mSelectedObjects.insert(SelectedObjectMap::value_type(mouseOver->id(), mouseOver->getProxy().extrapolateLocation(Task::AbsTime::now())));
                 mouseOver->setSelected(true);
                 mLastShiftSelected = mouseOver->id();
                 // Fire selected event.
@@ -227,7 +230,7 @@ class OgreSystem::MouseHandler {
             mWhichRayObject+=direction;
             Entity *mouseOver = hoverEntity(camera, Task::AbsTime::now(), mouseev->mX, mouseev->mY, mWhichRayObject);
             if (mouseOver) {
-                mSelectedObjects.insert(SelectedObjectMap::value_type(mouseOver->id(), Location()));
+                mSelectedObjects.insert(SelectedObjectMap::value_type(mouseOver->id(), mouseOver->getProxy().extrapolateLocation(Task::AbsTime::now())));
                 mouseOver->setSelected(true);
                 SILOG(input,info,"Replaced selection with " << mouseOver->id());
                 // Fire selected event.
@@ -339,6 +342,14 @@ class OgreSystem::MouseHandler {
             end = endAxis * moveDistance; // / cameraAxis.dot(endAxis);
         }
         Vector3d toMove (end - start);
+		if (!boost::math::isfinite(toMove.x) || !boost::math::isfinite(toMove.y) || !boost::math::isfinite(toMove.z)) {
+			return EventResponse::cancel();
+		}
+		// Prevent moving outside of a small radius so you don't shoot an object into the horizon.
+		if (toMove.length() > 10*mParent->mInputManager->mWorldScale->as<float>()) {
+			// moving too much.
+			toMove *= (10*mParent->mInputManager->mWorldScale->as<float>()/toMove.length());
+		}
         SILOG(input,debug,"Start "<<start<<"; End "<<end<<"; toMove "<<toMove);
         for (SelectedObjectMap::const_iterator iter = mSelectedObjects.begin();
              iter != mSelectedObjects.end(); ++iter) {
@@ -694,7 +705,7 @@ class OgreSystem::MouseHandler {
             Location loc (ent->getProxy().extrapolateLocation(now));
             loc.setPosition(loc.getPosition() + Vector3d(WORLD_SCALE/2.,0,0));
             newEnt->getProxy().resetPositionVelocity(now, loc);
-            newSelectedObjectMap.insert(SelectedObjectMap::value_type(newEnt->id(),Location()));
+            newSelectedObjectMap.insert(SelectedObjectMap::value_type(newEnt->id(),newEnt->getProxy().extrapolateLocation(now)));
             newEnt->setSelected(true);
             ent->setSelected(false);
         }
@@ -749,7 +760,7 @@ class OgreSystem::MouseHandler {
             ent->setSelected(false);
         }
         mSelectedObjects.clear();
-        mSelectedObjects.insert(SelectedObjectMap::value_type(newParentId, Location()));
+        mSelectedObjects.insert(SelectedObjectMap::value_type(newParentId, newParentEntity->getProxy().extrapolateLocation(now)));
         newParentEntity->setSelected(true);
         return EventResponse::nop();
     }
@@ -771,7 +782,7 @@ class OgreSystem::MouseHandler {
                 hasSubObjects = true;
                 Entity *ent = *subIter;
                 ent->getProxy().setParent(parentParent, now);
-                newSelectedObjectMap.insert(SelectedObjectMap::value_type(ent->id(), Location()));
+                newSelectedObjectMap.insert(SelectedObjectMap::value_type(ent->id(), ent->getProxy().extrapolateLocation(now)));
                 ent->setSelected(true);
             }
             if (hasSubObjects) {
@@ -780,7 +791,7 @@ class OgreSystem::MouseHandler {
                 parentEnt = NULL; // dies.
                 numUngrouped++;
             } else {
-                newSelectedObjectMap.insert(SelectedObjectMap::value_type(parentEnt->id(), Location()));
+                newSelectedObjectMap.insert(SelectedObjectMap::value_type(parentEnt->id(), parentEnt->getProxy().extrapolateLocation(now)));
             }
         }
         mSelectedObjects.swap(newSelectedObjectMap);
@@ -809,7 +820,7 @@ class OgreSystem::MouseHandler {
             for (SubObjectIterator subIter (parentEnt); !subIter.end(); ++subIter) {
                 hasSubObjects = true;
                 Entity *ent = *subIter;
-                newSelectedObjectMap.insert(SelectedObjectMap::value_type(ent->id(), Location()));
+                newSelectedObjectMap.insert(SelectedObjectMap::value_type(ent->id(), ent->getProxy().extrapolateLocation(now)));
                 ent->setSelected(true);
             }
             if (hasSubObjects) {
@@ -835,7 +846,7 @@ class OgreSystem::MouseHandler {
             mCurrentGroup = ent->getProxy().getParent();
             Entity *parentEnt = mParent->getEntity(mCurrentGroup);
             if (parentEnt) {
-                mSelectedObjects.insert(SelectedObjectMap::value_type(mCurrentGroup,Location()));
+                mSelectedObjects.insert(SelectedObjectMap::value_type(mCurrentGroup,parentEnt->getProxy().extrapolateLocation(now)));
             }
         } else {
             mCurrentGroup = SpaceObjectReference::null();
@@ -894,6 +905,33 @@ class OgreSystem::MouseHandler {
         return EventResponse::nop();
     }
 
+    EventResponse import(EventPtr ev) {
+		std::string filename;
+		// a bit of a cludge right now, type name into console.
+        fflush(stdin);
+		while (!feof(stdin)) {
+			int c = fgetc(stdin);
+			if (c == '\r') {
+				c = fgetc(stdin);
+			}
+			if (c=='\n') {
+				break;
+			}
+			if (c=='\033' || c <= 0) {
+				std::cout << "<escape>\n";
+				return EventResponse::nop();
+			}
+			std::cout << (unsigned char)c;
+			filename += (unsigned char)c;
+		}
+		std::cout << '\n';
+		std::vector<std::string> files;
+		files.push_back(filename);
+		mParent->mInputManager->filesDropped(files);
+		return EventResponse::cancel();
+	}
+
+
     ///////////////// DEVICE FUNCTIONS ////////////////
 
     SubscriptionId registerAxisListener(const InputDevicePtr &dev,
@@ -910,9 +948,9 @@ class OgreSystem::MouseHandler {
 
     SubscriptionId registerButtonListener(const InputDevicePtr &dev,
                               EventResponse(MouseHandler::*func)(EventPtr),
-                              int button, bool released=false) {
+                              int button, bool released=false, InputDevice::Modifier mod=0) {
         Task::IdPair eventId (released?ButtonReleased::getEventId():ButtonPressed::getEventId(),
-                              ButtonEvent::getSecondaryId(button, 0, dev));
+                              ButtonEvent::getSecondaryId(button, mod, dev));
         SubscriptionId subId = mParent->mInputManager->subscribeId(eventId,
             std::tr1::bind(func, this, _1));
         mEvents.push_back(subId);
@@ -958,6 +996,7 @@ class OgreSystem::MouseHandler {
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDLK_DOWN,true);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDLK_LEFT,true);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDLK_RIGHT,true);
+                registerButtonListener(ev->mDevice, &MouseHandler::import, 'o', false, InputDevice::MOD_CTRL);
             }
             break;
           case InputDeviceEvent::REMOVED:
@@ -1017,6 +1056,16 @@ public:
             mParent->mInputManager->unsubscribe(*iter);
         }
     }
+    void setParentGroupAndClear(const SpaceObjectReference &id) {
+        clearSelection();
+        mCurrentGroup = id;
+    }
+    const SpaceObjectReference &getParentGroup() const {
+        return mCurrentGroup;
+    }
+    void addToSelection(const ProxyPositionObjectPtr &obj) {
+		mSelectedObjects.insert(SelectedObjectMap::value_type(obj->getObjectReference(), obj->extrapolateLocation(Task::AbsTime::now())));
+    }
 };
 
 void OgreSystem::allocMouseHandler() {
@@ -1025,6 +1074,16 @@ void OgreSystem::allocMouseHandler() {
 void OgreSystem::destroyMouseHandler() {
     if (mMouseHandler) {
         delete mMouseHandler;
+    }
+}
+
+void OgreSystem::selectObject(Entity *obj, bool replace) {
+    if (replace) {
+        mMouseHandler->setParentGroupAndClear(obj->getProxy().getParent());
+    }
+    if (mMouseHandler->getParentGroup() == obj->getProxy().getParent()) {
+        mMouseHandler->addToSelection(obj->getProxyPtr());
+        obj->setSelected(true);
     }
 }
 

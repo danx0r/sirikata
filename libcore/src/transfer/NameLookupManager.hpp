@@ -117,10 +117,6 @@ private:
 	}
 
 protected:
-	/** To be overridden for any child class that intends to cache name lookups.
-	 * Note that origNamedUri is the URI from before the service lookup step. */
-	virtual void addToCache(const URI &origNamedUri, const RemoteFileId &toFetch) {
-	}
 
 	/** FIXME: Should these be overridden by a subclass. */
 	virtual void unserialize() {
@@ -131,6 +127,16 @@ protected:
 	}
 
 public:
+
+	/** Invalidates a given item from the cache, if it is cached. */
+	virtual void removeFromCache(const URI &origNamedUri) {
+	}
+
+	/** To be overridden for any child class that intends to cache name lookups.
+	 * Note that origNamedUri is the URI from before the service lookup step. */
+	virtual void addToCache(const URI &origNamedUri, const RemoteFileId &toFetch) {
+	}
+
 	/** NameLookupManager constructor.
 	 *
 	 * @param nameProtocols  The NameLookupHandler protocol registry to be used.
@@ -151,7 +157,7 @@ public:
 	 *
 	 * @param namedUri A ServiceURI or a regular URI (depending on if serviceLookup is NULL)
 	 * @param cb       The Callback to be called either on success or failure. */
-	void lookupHash(const URI &namedUri, const Callback &cb) {
+	virtual void lookupHash(const URI &namedUri, const Callback &cb) {
 		mNameServ->lookupService(namedUri.context(), std::tr1::bind(&NameLookupManager::doNameLookup,
 			this, cb, namedUri, _1, ServiceIterator::SUCCESS));
 	}

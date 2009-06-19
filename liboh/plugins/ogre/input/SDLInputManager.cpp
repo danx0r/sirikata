@@ -34,6 +34,7 @@
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
 #endif
+
 #include <util/Standard.hh>
 #include <oh/Platform.hpp>
 
@@ -42,6 +43,11 @@
 #include <SDL_video.h>
 #include <SDL_syswm.h>
 #include <SDL_events.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <shellapi.h>
+#endif
 
 //Thank you Apple:
 // /System/Library/Frameworks/CoreServices.framework/Headers/../Frameworks/CarbonCore.framework/Headers/MacTypes.h
@@ -107,6 +113,7 @@ SDLInputManager::SDLInputManager(unsigned int width,unsigned int height, bool fu
     Ogre::PixelFormat fmt = (Ogre::PixelFormat)ogrePixelFormat;
     mWindowContext=0;
     mWidth = width;
+    mHasKeyboardFocus = true;
     mHeight = height;
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE) < 0) {
         SILOG(ogre,error,"Couldn't initialize SDL: "<<SDL_GetError());
@@ -139,6 +146,9 @@ SDLInputManager::SDLInputManager(unsigned int width,unsigned int height, bool fu
         RECT r;
         GetWindowRect(pInfo.window, &r);
         SetWindowPos(pInfo.window, 0, r.left, r.top, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+		SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
+		DragAcceptFiles(pInfo.window, TRUE);
 #endif
     }else {
         SDL_Init(SDL_INIT_VIDEO);
@@ -213,6 +223,16 @@ SDLInputManager::SDLInputManager(unsigned int width,unsigned int height, bool fu
         SDL_SetWindowGrab(mWindowID,SDL_GRAB_ON); // SDL_GRAB_OFF to not grab input (default)
 */
 }
+
+void SDLInputManager::filesDropped(const std::vector<std::string> &files) {
+    std::vector<std::string> allFiles; // Recursively search!
+	for (size_t i = 0; i < files.size(); ++i) {
+		SILOG(input,info,"File '" << files[i] << "' has been dropped on the window");
+        allFiles.push_back(files[i]);
+    }
+    fire(Task::EventPtr(new DragAndDropEvent(files)));
+}
+
 bool SDLInputManager::tick(Time currentTime, Duration frameTime){
 #ifndef _WIN32
     SDL_GL_SwapBuffers();
@@ -236,6 +256,7 @@ bool SDLInputManager::tick(Time currentTime, Duration frameTime){
             break;
           case SDL_MOUSEBUTTONDOWN:
           case SDL_MOUSEBUTTONUP:
+          if (mHasKeyboardFocus) {
             mMice[event->button.which]->fireButton(
                 mMice[event->button.which],
                 this, 
@@ -250,55 +271,103 @@ bool SDLInputManager::tick(Time currentTime, Duration frameTime){
                 SDL_GetCurrentCursor(event->button.which),
                 event->button.button,
                 event->button.state == SDL_PRESSED);
+            }
             break;
           case SDL_JOYBUTTONDOWN:
           case SDL_JOYBUTTONUP:
+          if (mHasKeyboardFocus) {
             mJoy[event->jbutton.which]->fireButton(
                 mJoy[event->jbutton.which],
                 this, 
                 event->jbutton.button,
                 event->jbutton.state == SDL_PRESSED);
+            }
             break;
           case SDL_TEXTINPUT:
+          if (mHasKeyboardFocus) {
             fire(Task::EventPtr(new TextInputEvent(
                                     mKeys[event->text.which], 
                                     event->text.text)));
+            }
             break;
           case SDL_MOUSEMOTION:
+          if (mHasKeyboardFocus) {
             mMice[event->motion.which]->fireMotion(
                 mMice[event->motion.which],
                 this,
                 event->motion);
+            }
             break;
           case SDL_MOUSEWHEEL:
+          if (mHasKeyboardFocus) {
             mMice[event->wheel.which]->fireWheel(
                 mMice[event->wheel.which],
                 this, 
                 event->wheel.x, 
                 event->wheel.y);
+            }
             break;
           case SDL_JOYAXISMOTION:
+          if (mHasKeyboardFocus) {
             mJoy[event->wheel.which]->fireAxis(
                 mJoy[event->wheel.which],
                 this, 
                 event->jaxis.axis, 
                 AxisValue::fromCentered(event->jaxis.value/32767.));
+            }
             break;
           case SDL_JOYHATMOTION:
+          if (mHasKeyboardFocus) {
             mJoy[event->wheel.which]->fireHat(
                 mJoy[event->wheel.which],
                 this, 
                 event->jhat.hat, 
                 event->jhat.value);
+            }
             break;
           case SDL_JOYBALLMOTION:
+          if (mHasKeyboardFocus) {
             mJoy[event->wheel.which]->fireBall(
                 mJoy[event->wheel.which],
                 this, 
                 event->jball.ball, 
                 event->jball.xrel, 
                 event->jball.yrel);
+            }
             break;
+		  case SDL_SYSWMEVENT:
+			  {
+				  SDL_SysWMmsg *msg = event->syswm.msg;
+#ifdef _WIN32
+				  // Drag-and-drop is windows only for now.
+				  switch (msg->msg) {
+					case WM_DROPFILES:
+					{
+					  HDROP hDrop = (HDROP)msg->wParam;
+					  POINT point;
+					  bool inWindow = DragQueryPoint(hDrop, &point)==TRUE?true:false;
+					  UINT numFiles = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
+					  std::vector<std::string> files;
+					  for (UINT i = 0; i < numFiles; i++) {
+						  UINT length = DragQueryFile(hDrop, i, NULL, 0);
+						  char *thisfilename = new char[length+1];
+						  DragQueryFile(hDrop, i, thisfilename, length+1);
+						  for (UINT pos = 0; pos < length; ++pos) {
+							  if (thisfilename[pos]=='\\') {
+								thisfilename[pos] = '/';
+							  }
+						  }
+						  files.push_back(std::string (thisfilename, length));
+						  delete thisfilename;
+					  }
+					  DragFinish(hDrop);
+					  filesDropped(files);
+					}
+					break;
+				  }
+#endif
+			  }
+			break;
           case SDL_WINDOWEVENT:
             {
                 int wid=(int)mWidth, hei=(int)mHeight;
@@ -318,6 +387,12 @@ bool SDLInputManager::tick(Time currentTime, Duration frameTime){
                 // and only if nobody has canceled it (i.e. a confirmation dialog)
                 SILOG(ogre,debug,"quitting\n");
                 continueRendering=false;
+            }
+            if (event->window.event==SDL_WINDOWEVENT_FOCUS_LOST) {
+                mHasKeyboardFocus=false;
+            }
+            if (event->window.event==SDL_WINDOWEVENT_FOCUS_GAINED) {
+                mHasKeyboardFocus=true;
             }
             break;
 

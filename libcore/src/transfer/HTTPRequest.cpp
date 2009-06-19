@@ -160,6 +160,19 @@ void HTTPRequest::gotHeader(const std::string &header) {
 			// FIXME: only reserve() here -- do not adjust the actual length until copying data.
 			mData->setLength(dataToReserve, mRequestedRange.goesToEndOfFile());
 			SILOG(transfer,debug,"Downloading file range " << (Range)(*mData) << " from "<<mURI);
+
+			if (mRequestedRange.startbyte() == 0 && mRequestedRange.goesToEndOfFile()) {
+				mFullFilesizeOnServer = dataToReserve;
+			}
+		}
+	}
+	if (headername == "content-range") {
+		std::string::size_type slashpos = headervalue.find('/');
+		if (slashpos != std::string::npos) {
+			cache_usize_type fulllength = 0;
+			std::istringstream istr(headervalue.substr(slashpos+1));
+			istr >> fulllength;
+			mFullFilesizeOnServer = fulllength;
 		}
 	}
 	SILOG(transfer,insane,"Got header [" << headername << "] = " << headervalue);
@@ -510,6 +523,7 @@ void HTTPRequest::initCurlHandle() {
 	mState = NEW;
 	mStatusCode = 0;
 	mOffset = 0;
+	mFullFilesizeOnServer = 0;
 	mData = MutableDenseDataPtr(new DenseData(mRequestedRange));
 	mUploadOffset = 0;
 
@@ -528,21 +542,25 @@ void HTTPRequest::initCurlHandle() {
 
 	std::ostringstream orangestring;
 	bool nontrivialRange=false;
-	if (mRequestedRange.startbyte() != 0) {
-		nontrivialRange=true;
-		orangestring << mRequestedRange.startbyte();
-		mOffset = mRequestedRange.startbyte();
-	}
-	orangestring << '-';
-	if (!mRequestedRange.goesToEndOfFile()) {
-		if (mRequestedRange.length() <= 0) {
-			// invalid range
-			mCallback(this, DenseDataPtr(new DenseData(mRequestedRange)), true);
-			return;
-		}
-		nontrivialRange=true;
-		orangestring << (mRequestedRange.endbyte());
-	}
+    if (mRequestedRange.length() == 0 && !mRequestedRange.goesToEndOfFile()) {
+		curl_easy_setopt(mCurlRequest, CURLOPT_NOBODY, 1);
+    } else {
+        if (mRequestedRange.startbyte() != 0) {
+            nontrivialRange=true;
+            orangestring << mRequestedRange.startbyte();
+            mOffset = mRequestedRange.startbyte();
+        }
+        orangestring << '-';
+        if (!mRequestedRange.goesToEndOfFile()) {
+            if (mRequestedRange.length() <= 0) {
+                // invalid range
+                mCallback(this, DenseDataPtr(new DenseData(mRequestedRange)), true);
+                return;
+            }
+            nontrivialRange=true;
+            orangestring << (mRequestedRange.endbyte());
+        }
+    }
 
 	if (nontrivialRange) {
 		mRangeString = orangestring.str();
