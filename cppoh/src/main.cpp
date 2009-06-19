@@ -291,11 +291,27 @@ int main(int argc,const char**argv) {
     String physicsPluginName ( "bulletphysics" );
     TimeSteppedSimulation *graphicsSystem=
         SimulationFactory::getSingleton()
-        .getConstructor(graphicsPluginName)(provider,graphicsCommandArguments);
+        .getConstructor (graphicsPluginName) (provider,graphicsCommandArguments);
+    SILOG(cppoh,error,"dbm: initializing physics");
+    TimeSteppedSimulation *physicsSystem=
+        SimulationFactory::getSingleton()
+        .getConstructor ( physicsPluginName ) ( provider,graphicsCommandArguments );
+    SILOG(cppoh,error,"dbm: checking physics");
+    if (!physicsSystem) {
+        SILOG(cppoh,error,"physicsSystem NULL!");
+        int n=0;
+        n /= 0;
+    }
+    else {
+        SILOG(cppoh,error,"physicsSystem: " << std::hex << (unsigned long)physicsSystem);
+    }
+    SILOG(cppoh,error,"dbm: about to initialize");
     pm->initialize();
-    if (graphicsSystem) {
-    while (graphicsSystem->tick()) {
-
+    if ( graphicsSystem ) {
+        while ( graphicsSystem->tick() ) {
+            SILOG ( cppoh,error,"just called ogre tick" ); ///dbm
+            physicsSystem->tick();
+            SILOG ( cppoh,error,"just called bullet tick" ); ///dbm
         }
     } else {
         SILOG(cppoh,error,"Fatal Error: Unable to load OGRE Graphics plugin. The PATH environment variable is ignored, so make sure you have copied the DLLs from dependencies/ogre/bin/ into the current directory. Sorry about this!");
