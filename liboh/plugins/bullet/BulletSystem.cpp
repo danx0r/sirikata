@@ -79,10 +79,6 @@ SIRIKATA_PLUGIN_EXPORT_C int refcount() {
 namespace Sirikata {
 
 static URI streetlight("mhash:///66b189d665dd968d94a1415393f0037299fc2d9a18ca457dba5038f90083157c");
-static Task::AbsTime starttime = Task::AbsTime::now();
-static Task::AbsTime lasttime = starttime;
-static Task::DeltaTime waittime = Task::DeltaTime::seconds(1.0);
-static int bugoffset = 0;
 
 void bulletObj::meshChanged (const URI &newMesh) {
     cout << "dbm:    meshlistener: " << newMesh << endl;
@@ -100,7 +96,6 @@ bulletObj::bulletObj(BulletSystem* sys) {
     cout << "dbm: I am bulletObj constructor! sys: " << sys << endl;
     system = sys;
     velocity = Vector3d(0, 0, 0);
-    gravity = Vector3d(0, -10.0, 0);
 }
 
 void BulletSystem::addPhysicalObject(bulletObj* obj) {
@@ -109,16 +104,40 @@ void BulletSystem::addPhysicalObject(bulletObj* obj) {
 }
 
 bool BulletSystem::tick() {
+    static Task::AbsTime starttime = Task::AbsTime::now();
+    static Task::AbsTime lasttime = starttime;
+    static Task::DeltaTime waittime = Task::DeltaTime::seconds(20.0);
+    static int mode = 0;
+    static double groundlevel = 3045.0;
     Task::AbsTime now = Task::AbsTime::now();
+    Task::DeltaTime delta;
+    Vector3d oldpos;
+    Vector3d newpos;
+
     cout << "dbm: BulletSystem::tick time: " << (now-starttime).toSeconds() << endl;
     if (now > lasttime + waittime) {
+        if (mode==0) {                                      /// afer initial wait, set delta to zero
+            mode++;
+            waittime = Task::DeltaTime::seconds(0.02);
+            delta = Task::DeltaTime::seconds(0);
+        }
+        else {                                              /// from now on, delta =~ 0.02 seconds
+            delta = now-lasttime;
+        }
         lasttime = now;
-        bugoffset ^= 1;
         for (unsigned int i=0; i<physicalObjects.size(); i++) {
-            cout << "  dbm: BS:tick old position: " << physicalObjects[i]->meshptr->getPosition() << endl;
-            physicalObjects[i]->meshptr->setPosition(now, Vector3d(580+bugoffset, 3043, 1046+bugoffset), Quaternion());
-            cout << "  dbm: BS:tick moving object: " << physicalObjects[i] <<
-            " new position: " << physicalObjects[i]->meshptr->getPosition() << endl;
+            cout << "  dbm: BS:tick moving object: " << physicalObjects[i] << endl;
+            oldpos = physicalObjects[i]->meshptr->getPosition();
+            physicalObjects[i]->velocity += gravity*delta.toSeconds();
+            if (oldpos.y > groundlevel) {
+                newpos = oldpos + physicalObjects[i]->velocity;              /// should work, acc. to Newton
+                cout << "    dbm: BS:tick old position: " << oldpos << endl;
+                physicalObjects[i]->meshptr->setPosition(now, newpos, Quaternion());
+                cout << "    dbm: BS:tick new position: " << physicalObjects[i]->meshptr->getPosition() << endl;
+            } else {
+                physicalObjects[i]->velocity = Vector3d(0, 0, 0);
+                cout << "    dbm: BS:tick groundlevel reached" << endl;
+            } 
         }
     }
     cout << endl;
@@ -132,6 +151,7 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
 }
 
 BulletSystem::BulletSystem() {
+    gravity = Vector3d(0, -1.0, 0);
     cout << "dbm: I am the BulletSystem constructor!" << endl;
 }
 
