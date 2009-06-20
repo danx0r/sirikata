@@ -52,6 +52,8 @@ class bulletObj : public MeshListener {
     void meshChanged (const URI &newMesh);
     void setScale (const Vector3f &newScale);
     BulletSystem* system;
+    Vector3d velocity;
+    Vector3d gravity; 
 public:
     bulletObj(BulletSystem* sys);
     ProxyMeshObjectPtr meshptr;

@@ -81,7 +81,7 @@ namespace Sirikata {
 static URI streetlight("mhash:///66b189d665dd968d94a1415393f0037299fc2d9a18ca457dba5038f90083157c");
 static Task::AbsTime starttime = Task::AbsTime::now();
 static Task::AbsTime lasttime = starttime;
-static Task::DeltaTime onesec = Task::DeltaTime::seconds(1.0);
+static Task::DeltaTime waittime = Task::DeltaTime::seconds(1.0);
 static int bugoffset = 0;
 
 void bulletObj::meshChanged (const URI &newMesh) {
@@ -99,6 +99,8 @@ void bulletObj::setScale (const Vector3f &newScale) {
 bulletObj::bulletObj(BulletSystem* sys) {
     cout << "dbm: I am bulletObj constructor! sys: " << sys << endl;
     system = sys;
+    velocity = Vector3d(0, 0, 0);
+    gravity = Vector3d(0, -10.0, 0);
 }
 
 void BulletSystem::addPhysicalObject(bulletObj* obj) {
@@ -109,13 +111,14 @@ void BulletSystem::addPhysicalObject(bulletObj* obj) {
 bool BulletSystem::tick() {
     Task::AbsTime now = Task::AbsTime::now();
     cout << "dbm: BulletSystem::tick time: " << (now-starttime).toSeconds() << endl;
-    if (now > lasttime + onesec) {
+    if (now > lasttime + waittime) {
         lasttime = now;
         bugoffset ^= 1;
         for (unsigned int i=0; i<physicalObjects.size(); i++) {
-            physicalObjects[i]->meshptr->setPosition(now, Vector3d(580+bugoffset, 3049+bugoffset, 1046+bugoffset), Quaternion());
+            cout << "  dbm: BS:tick old position: " << physicalObjects[i]->meshptr->getPosition() << endl;
+            physicalObjects[i]->meshptr->setPosition(now, Vector3d(580+bugoffset, 3043, 1046+bugoffset), Quaternion());
             cout << "  dbm: BS:tick moving object: " << physicalObjects[i] <<
-                    " new position: " << physicalObjects[i]->meshptr->getPosition() << endl;
+            " new position: " << physicalObjects[i]->meshptr->getPosition() << endl;
         }
     }
     cout << endl;
