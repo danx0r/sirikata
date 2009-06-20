@@ -106,7 +106,7 @@ void BulletSystem::addPhysicalObject(bulletObj* obj) {
 bool BulletSystem::tick() {
     static Task::AbsTime starttime = Task::AbsTime::now();
     static Task::AbsTime lasttime = starttime;
-    static Task::DeltaTime waittime = Task::DeltaTime::seconds(20.0);
+    static Task::DeltaTime waittime = Task::DeltaTime::seconds(0.02);
     static int mode = 0;
     static double groundlevel = 3045.0;
     Task::AbsTime now = Task::AbsTime::now();
@@ -116,14 +116,8 @@ bool BulletSystem::tick() {
 
     cout << "dbm: BulletSystem::tick time: " << (now-starttime).toSeconds() << endl;
     if (now > lasttime + waittime) {
-        if (mode==0) {                                      /// afer initial wait, set delta to zero
-            mode++;
-            waittime = Task::DeltaTime::seconds(0.02);
-            delta = Task::DeltaTime::seconds(0);
-        }
-        else {                                              /// from now on, delta =~ 0.02 seconds
-            delta = now-lasttime;
-        }
+        delta = now-lasttime;
+        if(delta.toSeconds() > 0.05) delta = delta.seconds(0.05);
         lasttime = now;
         for (unsigned int i=0; i<physicalObjects.size(); i++) {
             cout << "  dbm: BS:tick moving object: " << physicalObjects[i] << endl;
@@ -134,10 +128,11 @@ bool BulletSystem::tick() {
                 cout << "    dbm: BS:tick old position: " << oldpos << endl;
                 physicalObjects[i]->meshptr->setPosition(now, newpos, Quaternion());
                 cout << "    dbm: BS:tick new position: " << physicalObjects[i]->meshptr->getPosition() << endl;
-            } else {
+            }
+            else {
                 physicalObjects[i]->velocity = Vector3d(0, 0, 0);
                 cout << "    dbm: BS:tick groundlevel reached" << endl;
-            } 
+            }
         }
     }
     cout << endl;
