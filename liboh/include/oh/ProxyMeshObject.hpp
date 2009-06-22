@@ -45,6 +45,7 @@ class SIRIKATA_OH_EXPORT ProxyMeshObject
 protected:
     URI mMeshURI;
     Vector3f mScale;
+    bool mPhysical;
 public:
     ProxyMeshObject(ProxyManager *man, const SpaceObjectReference&id);
     void setMesh (const URI &newMesh);
@@ -57,6 +58,9 @@ public:
     inline const Vector3f &getScale() const {
         return mScale;
     }
-};
+    inline const bool getPhysical() const {
+        return mPhysical;
+    }
+    };
 }
 #endif
