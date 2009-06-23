@@ -226,33 +226,37 @@ void parseConfig(
 
 }
 
-int main(int argc,const char**argv) {
-    using namespace Sirikata;
-    PluginManager plugins;
-    plugins.load(
-#ifdef __APPLE__
 #ifdef NDEBUG
-        "libogregraphics.dylib"
+#define PLUGIN_SUFFIX
 #else
-        "libogregraphics_d.dylib"
+#define PLUGIN_SUFFIX "_d"
 #endif
+
+#ifdef _WIN32
+#define PLUGIN_PREFIX
+#else
+#define PLUGIN_PREFIX "lib"
+#endif
+
+#ifdef __APPLE__
+#define PLUGIN_EXT ".dylib"
 #else
 #ifdef _WIN32
-#ifdef NDEBUG
-        "ogregraphics.dll"
+#define PLUGIN_EXT ".dll"
 #else
-        "ogregraphics_d.dll"
-#endif
-#else
-#ifdef NDEBUG
-        "libogregraphics.so"
-#else
-        "libogregraphics_d.so"
+#define PLUGIN_EXT ".so"
 #endif
 #endif
-#endif
-    );
-    plugins.load ("libbulletphysics_d.so");
+
+#define PLUGIN_FILENAME(name) PLUGIN_PREFIX name PLUGIN_SUFFIX PLUGIN_EXT
+
+int main ( int argc,const char**argv ) {
+    using namespace Sirikata;
+    PluginManager plugins;
+    plugins.load (PLUGIN_FILENAME("ogregraphics"));
+    plugins.load (PLUGIN_FILENAME("bulletphysics"));
+    OptionSet::getOptions ( "" )->parse ( argc,argv );
+
     OptionMapPtr transferOptions (new OptionMap);
     {
         std::string contents(cdnConfigFile->as<String>());
