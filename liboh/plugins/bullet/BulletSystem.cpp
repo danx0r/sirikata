@@ -159,8 +159,6 @@ bool BulletSystem::tick() {
 bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, const String&options) {
     /// HelloWorld from Bullet/Demos
     {
-
-        int i;
         btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration();
         btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfiguration);
         btVector3 worldAabbMin(-10000,-10000,-10000);
@@ -168,7 +166,8 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
         int maxProxies = 1024;
         btAxisSweep3* overlappingPairCache = new btAxisSweep3(worldAabbMin,worldAabbMax,maxProxies);
         btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
-        btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
+        btDiscreteDynamicsWorld* dynamicsWorld = 
+            new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
         dynamicsWorld->setGravity(btVector3(0,-10,0));
         btCollisionShape* groundShape = new btBoxShape(btVector3(btScalar(50.),btScalar(50.),btScalar(50.)));
         btAlignedObjectArray<btCollisionShape*> collisionShapes;
@@ -177,34 +176,29 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
         groundTransform.setIdentity();
         groundTransform.setOrigin(btVector3(0,-56,0));
 
-        {
-            btVector3 localInertia(0,0,0);
-            groundShape->calculateLocalInertia(0.0f,localInertia);
-            btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
-            btRigidBody::btRigidBodyConstructionInfo rbInfo(0.0f,myMotionState,groundShape,localInertia);
-            btRigidBody* body = new btRigidBody(rbInfo);
-            dynamicsWorld->addRigidBody(body);
-        }
+        btVector3 localInertia(0,0,0);
+        groundShape->calculateLocalInertia(0.0f,localInertia);
+        btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(0.0f,myMotionState,groundShape,localInertia);
+        btRigidBody* body = new btRigidBody(rbInfo);
+        dynamicsWorld->addRigidBody(body);
 
-
-        {
         //btCollisionShape* colShape = new btBoxShape(btVector3(1,1,1));
-            btCollisionShape* colShape = new btSphereShape(btScalar(1.));
-            collisionShapes.push_back(colShape);
-            btTransform startTransform;
-            startTransform.setIdentity();
+        btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+        collisionShapes.push_back(colShape);
+        btTransform startTransform;
+        startTransform.setIdentity();
 
-            btVector3 localInertia(0,0,0);
-            colShape->calculateLocalInertia(1.0f,localInertia);
-            startTransform.setOrigin(btVector3(2,10,0));
-            btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
-            btRigidBody::btRigidBodyConstructionInfo rbInfo(1.0f,myMotionState,colShape,localInertia);
-            btRigidBody* body = new btRigidBody(rbInfo);
-            dynamicsWorld->addRigidBody(body);
-        }
+        localInertia = btVector3(0,0,0);
+        colShape->calculateLocalInertia(1.0f,localInertia);
+        startTransform.setOrigin(btVector3(2,10,0));
+        myMotionState = new btDefaultMotionState(startTransform);
+        rbInfo=btRigidBody::btRigidBodyConstructionInfo(1.0f,myMotionState,colShape,localInertia);
+        body = new btRigidBody(rbInfo);
+        dynamicsWorld->addRigidBody(body);
 /// Do some simulation
         
-        for (i=0;i<100;i++)
+        for (int i=0;i<100;i++)
         {
             dynamicsWorld->stepSimulation(1.f/60.f,10);
             for (int j=dynamicsWorld->getNumCollisionObjects()-1; j>=0 ;j--)
@@ -223,7 +217,7 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
 
 /// cleanup
         
-        for (i=dynamicsWorld->getNumCollisionObjects()-1; i>=0 ;i--)
+        for (int i=dynamicsWorld->getNumCollisionObjects()-1; i>=0 ;i--)
         {
             btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
             btRigidBody* body = btRigidBody::upcast(obj);
