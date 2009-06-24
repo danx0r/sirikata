@@ -35,6 +35,7 @@
 #include "BulletSystem.hpp"
 #include <oh/SimulationFactory.hpp>
 #include <oh/ProxyObject.hpp>
+#include "btBulletDynamicsCommon.h"
 
 using namespace std;
 static int core_plugin_refcount = 0;
@@ -156,8 +157,9 @@ bool BulletSystem::tick() {
 }
 
 bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, const String&options) {
-    cout << "dbm: BulletSystem::initialize" << endl;
+    btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration();
     proxyManager->addListener(this);
+    cout << "dbm: BulletSystem::initialized, including test bullet object" << endl;
     return true;
 }
 
