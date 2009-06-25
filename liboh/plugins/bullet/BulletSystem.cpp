@@ -92,10 +92,23 @@ void bulletObj::setPhysical (const bool flag) {
     isPhysical=flag;
     Vector3d pos = this->meshptr->getPosition();
     if (isPhysical) {
-        system->addPhysicalObject(this, pos.x, pos.y, pos.z);
+        bulletBodyPtr = system->addPhysicalObject(this, pos.x, pos.y, pos.z);
     }
     else {
         system->removePhysicalObject(this);
+    }
+}
+
+Vector3d bulletObj::getBulletPosition() {
+    if (this->bulletBodyPtr && this->bulletBodyPtr->getMotionState()) {
+        btTransform trans;
+        this->bulletBodyPtr->getMotionState()->getWorldTransform(trans);
+//        printf("dbm: world item %d pos = %f,%f,%f\n", j,               float(trans.getOrigin().getX()),float(trans.getOrigin().getY()),float(trans.getOrigin().getZ()));
+        return Vector3d(trans.getOrigin().getX(),trans.getOrigin().getY(),trans.getOrigin().getZ());
+    }
+    else {
+        printf("dbm: error -- this is not a bullet object with a motionstate!\n");
+        return Vector3d(0,0,0);
     }
 }
 
@@ -106,7 +119,7 @@ bulletObj::bulletObj(BulletSystem* sys) {
     velocity = Vector3d(0, 0, 0);
 }
 
-void BulletSystem::addPhysicalObject(bulletObj* obj, double posX, double posY, double posZ) {
+btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj, double posX, double posY, double posZ) {
     btCollisionShape* colShape;
     btTransform startTransform;
     btVector3 localInertia(0,0,0);
@@ -127,9 +140,11 @@ void BulletSystem::addPhysicalObject(bulletObj* obj, double posX, double posY, d
     dynamicsWorld->addRigidBody(body);
 
     physicalObjects.push_back(obj);
+    return body;
 }
 
 void BulletSystem::removePhysicalObject(bulletObj* obj) {
+    /// need to clean up bullet stuff
     cout << "dbm: removing physical object: " << obj << endl;
     for (unsigned int i=0; i<physicalObjects.size(); i++) {
         if (physicalObjects[i] == obj) {
