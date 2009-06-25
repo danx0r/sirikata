@@ -90,8 +90,9 @@ void bulletObj::setScale (const Vector3f &newScale) {
 void bulletObj::setPhysical (const bool flag) {
     cout << "dbm: setPhysical: " << flag << endl;
     isPhysical=flag;
+    Vector3d pos = this->meshptr->getPosition();
     if (isPhysical) {
-        system->addPhysicalObject(this);
+        system->addPhysicalObject(this, pos.x, pos.y, pos.z);
     }
     else {
         system->removePhysicalObject(this);
@@ -105,7 +106,7 @@ bulletObj::bulletObj(BulletSystem* sys) {
     velocity = Vector3d(0, 0, 0);
 }
 
-void BulletSystem::addPhysicalObject(bulletObj* obj) {
+void BulletSystem::addPhysicalObject(bulletObj* obj, double posX, double posY, double posZ) {
     btCollisionShape* colShape;
     btTransform startTransform;
     btVector3 localInertia(0,0,0);
@@ -118,7 +119,7 @@ void BulletSystem::addPhysicalObject(bulletObj* obj) {
     localInertia = btVector3(0,0,0);
     colShape->calculateLocalInertia(1.0f,localInertia);
     startTransform.setIdentity();
-    startTransform.setOrigin(btVector3(2,groundlevel+10,0));
+    startTransform.setOrigin(btVector3(posX,posY,posZ));
     myMotionState = new btDefaultMotionState(startTransform);
     btRigidBody::btRigidBodyConstructionInfo rbInfo(1.0f,myMotionState,colShape,localInertia);
     body = new btRigidBody(rbInfo);
@@ -204,7 +205,7 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     solver = new btSequentialImpulseConstraintSolver;
     dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
     dynamicsWorld->setGravity(btVector3(gravity.x, gravity.y, gravity.z));
-    groundShape= new btBoxShape(btVector3(btScalar(50.),btScalar(1.0),btScalar(50.)));
+    groundShape= new btBoxShape(btVector3(btScalar(1500.),btScalar(1.0),btScalar(1500.)));
     collisionShapes.push_back(groundShape);
     groundTransform.setIdentity();
     groundTransform.setOrigin(btVector3(0,groundlevel-1,0));

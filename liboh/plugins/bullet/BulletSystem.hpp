@@ -80,7 +80,7 @@ class BulletSystem: public TimeSteppedSimulation {
 
 public:
     BulletSystem();
-    void addPhysicalObject(bulletObj*);
+    void addPhysicalObject(bulletObj*, double x, double y, double z);
     void removePhysicalObject(bulletObj*);
     static TimeSteppedSimulation* create(Provider<ProxyCreationListener*>*proxyManager,
                                          const String&options) {
