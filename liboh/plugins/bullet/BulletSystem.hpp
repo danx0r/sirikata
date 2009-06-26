@@ -65,7 +65,7 @@ public:
     Vector3d velocity;
     bulletObj(BulletSystem* sys);
     posquat getBulletState();
-    void setBulletPosition(Vector3d pos);
+    void setBulletState(Vector3d pos, Quaternion q);
     ProxyMeshObjectPtr meshptr;
     URI meshname;
 };

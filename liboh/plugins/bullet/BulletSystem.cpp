@@ -99,7 +99,7 @@ void bulletObj::setPhysical (const bool flag) {
         bulletBodyPtr=NULL;
     }
 }
- 
+
 posquat bulletObj::getBulletState() {
     if (this->bulletBodyPtr && this->bulletBodyPtr->getMotionState()) {
         btTransform trans;
@@ -117,7 +117,7 @@ posquat bulletObj::getBulletState() {
     }
 }
 
-void bulletObj::setBulletPosition(Vector3d pos) {
+void bulletObj::setBulletState(Vector3d pos, Quaternion q) {
     /* /// this fails to work -- next stepSim restores old position
     btTransform trans;
     this->bulletBodyPtr->getMotionState()->getWorldTransform(trans);
@@ -127,6 +127,7 @@ void bulletObj::setBulletPosition(Vector3d pos) {
     btTransform trans;
     bulletBodyPtr->getMotionState()->getWorldTransform(trans);
     trans.setOrigin(btVector3(pos.x, pos.y, pos.z));
+    trans.setRotation(btQuaternion(q.x, q.y, q.z, q.w));
     bulletBodyPtr->proceedToTransform(trans);
     bulletBodyPtr->activate(true);      /// wake up, you lazy slob!
 }
@@ -190,15 +191,16 @@ bool BulletSystem::tick() {
         if (delta.toSeconds() > 0.05) delta = delta.seconds(0.05);           /// avoid big time intervals, they are trubble
         lasttime = now;
         //if (((int)(now-starttime) % 15)<5) {
-        if ((now-starttime) > 40.0) {
+        if ((now-starttime) > 20.0) {
             for (unsigned int i=0; i<physicalObjects.size(); i++) {
                 if (physicalObjects[i]->meshptr->getPosition() != physicalObjects[i]->getBulletState().p) {
                     /// if object has been moved, reset bullet position accordingly
                     cout << "    dbm: item, " << i << " moved by user!"
                     << " meshpos: " << physicalObjects[i]->meshptr->getPosition()
                     << " bulletpos before reset: " << physicalObjects[i]->getBulletState().p;
-
-                    physicalObjects[i]->setBulletPosition(physicalObjects[i]->meshptr->getPosition());
+                    physicalObjects[i]->setBulletState(
+                        physicalObjects[i]->meshptr->getPosition(),
+                        physicalObjects[i]->meshptr->getOrientation());
                     cout << "bulletpos after reset: " << physicalObjects[i]->getBulletState().p
                     << endl;
                 }
