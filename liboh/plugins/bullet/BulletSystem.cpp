@@ -1,7 +1,7 @@
 /*  Sirikata liboh -- Bullet Graphics Plugin
  *  BulletGraphics.hpp
  *
- *  Copyright (c) 2009, Daniel Reiter Horn
+ *  Copyright (c) 2009, Daniel Reiter Horn & Daniel Braxton Miller
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -91,11 +91,11 @@ void bulletObj::setPhysical (const bool flag) {
     cout << "dbm: setPhysical: " << flag << endl;
     isPhysical=flag;
     if (isPhysical) {
-        posquat pq;
-        pq.p = meshptr->getPosition();
-        pq.q = meshptr->getOrientation();
+        positionOrientation po;
+        po.p = meshptr->getPosition();
+        po.o = meshptr->getOrientation();
         Vector3f size = meshptr->getScale();
-        bulletBodyPtr = system->addPhysicalObject(this, pq, size.x, size.y, size.z);
+        bulletBodyPtr = system->addPhysicalObject(this, po, size.x, size.y, size.z);
     }
     else {
         system->removePhysicalObject(this);
@@ -103,34 +103,28 @@ void bulletObj::setPhysical (const bool flag) {
     }
 }
 
-posquat bulletObj::getBulletState() {
+positionOrientation bulletObj::getBulletState() {
     if (this->bulletBodyPtr && this->bulletBodyPtr->getMotionState()) {
         btTransform trans;
         this->bulletBodyPtr->getMotionState()->getWorldTransform(trans);
-        posquat pq;
-        btVector3 p = trans.getOrigin();
-        btQuaternion q = trans.getRotation();
-        pq.p = Vector3d(p.getX(), p.getY(), p.getZ());
-        pq.q = Quaternion(q.getX(), q.getY(), q.getZ(), q.getW(), Quaternion::XYZW());
-        return pq;
+        //positionOrientation po;
+        //btVector3 p = trans.getOrigin();
+        //btQuaternion q = trans.getRotation();
+        //po.p = Vector3d(p.getX(), p.getY(), p.getZ());
+        //po.o = Quaternion(q.getX(), q.getY(), q.getZ(), q.getW(), Quaternion::XYZW());
+        return positionOrientation(trans.getOrigin(),trans.getRotation());
     }
     else {
         printf("dbm: error -- this is not a bullet object with a motionstate!\n");
-        return posquat();
+        return positionOrientation();
     }
 }
 
-void bulletObj::setBulletState(Vector3d pos, Quaternion q) {
-    /* /// this fails to work -- next stepSim restores old position
-    btTransform trans;
-    this->bulletBodyPtr->getMotionState()->getWorldTransform(trans);
-    trans.setOrigin(btVector3(pos.x, pos.y, pos.z));
-    this->bulletBodyPtr->getMotionState()->setWorldTransform(trans);
-    */
+void bulletObj::setBulletState(positionOrientation po) {
     btTransform trans;
     bulletBodyPtr->getMotionState()->getWorldTransform(trans);
-    trans.setOrigin(btVector3(pos.x, pos.y, pos.z));
-    trans.setRotation(btQuaternion(q.x, q.y, q.z, q.w));
+    trans.setOrigin(btVector3(po.p.x, po.p.y, po.p.z));
+    trans.setRotation(btQuaternion(po.o.x, po.o.y, po.o.z, po.o.w));
     bulletBodyPtr->proceedToTransform(trans);
     bulletBodyPtr->activate(true);      /// wake up, you lazy slob!
 }
@@ -143,7 +137,7 @@ bulletObj::bulletObj(BulletSystem* sys) {
 }
 
 btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj,
-        posquat pq,
+        positionOrientation po,
         float sizeX, float sizeY, float sizeZ) {
     btCollisionShape* colShape;
     btTransform startTransform;
@@ -165,8 +159,8 @@ btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj,
     localInertia = btVector3(0,0,0);
     colShape->calculateLocalInertia(1.0f,localInertia);
     startTransform.setIdentity();
-    startTransform.setOrigin(btVector3(pq.p.x,pq.p.y,pq.p.z));
-    startTransform.setRotation(btQuaternion(pq.q.x, pq.q.y, pq.q.z, pq.q.w));
+    startTransform.setOrigin(btVector3(po.p.x,po.p.y,po.p.z));
+    startTransform.setRotation(btQuaternion(po.o.x, po.o.y, po.o.z, po.o.w));
     myMotionState = new btDefaultMotionState(startTransform);
     btRigidBody::btRigidBodyConstructionInfo rbInfo(1.0f,myMotionState,colShape,localInertia);
     body = new btRigidBody(rbInfo);
@@ -196,7 +190,7 @@ bool BulletSystem::tick() {
     static int mode = 0;
     Task::AbsTime now = Task::AbsTime::now();
     Task::DeltaTime delta;
-    posquat pq;
+    positionOrientation po;
 
     cout << "dbm: BulletSystem::tick time: " << (now-starttime).toSeconds() << endl;
     if (now > lasttime + waittime) {
@@ -212,8 +206,10 @@ bool BulletSystem::tick() {
                     << " meshpos: " << physicalObjects[i]->meshptr->getPosition()
                     << " bulletpos before reset: " << physicalObjects[i]->getBulletState().p;
                     physicalObjects[i]->setBulletState(
-                        physicalObjects[i]->meshptr->getPosition(),
-                        physicalObjects[i]->meshptr->getOrientation());
+                        positionOrientation (
+                            physicalObjects[i]->meshptr->getPosition(),
+                            physicalObjects[i]->meshptr->getOrientation()
+                        ));
                     cout << "bulletpos after reset: " << physicalObjects[i]->getBulletState().p
                     << endl;
                 }
@@ -221,9 +217,9 @@ bool BulletSystem::tick() {
             //dynamicsWorld->stepSimulation(delta,0);
             dynamicsWorld->stepSimulation(delta,10);
             for (unsigned int i=0; i<physicalObjects.size(); i++) {
-                pq = physicalObjects[i]->getBulletState();
-                cout << "    dbm: item, " << i << ", delta, " << delta.toSeconds() << ", newpos, " << pq.p << endl;
-                physicalObjects[i]->meshptr->setPosition(now, pq.p, pq.q);
+                po = physicalObjects[i]->getBulletState();
+                cout << "    dbm: item, " << i << ", delta, " << delta.toSeconds() << ", newpos, " << po.p << endl;
+                physicalObjects[i]->meshptr->setPosition(now, po.p, po.o);
             }
         }
     }
@@ -274,7 +270,7 @@ BulletSystem::BulletSystem() {
 }
 
 BulletSystem::~BulletSystem() {
-/// cleanup
+/// this never gets called AFAICS
 
     for (int i=dynamicsWorld->getNumCollisionObjects()-1; i>=0 ;i--) {
         btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
