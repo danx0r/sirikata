@@ -82,7 +82,6 @@ MeshEntity::~MeshEntity() {
 
 void MeshEntity::loadMesh(const String& meshname)
 {
-
     Ogre::Entity * oldMeshObj=getOgreEntity();
 
     /** FIXME we need a better way of generating unique id's. We should

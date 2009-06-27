@@ -90,7 +90,7 @@ void bulletObj::setScale (const Vector3f &newScale) {
 void bulletObj::setPhysical (const bool flag) {
     cout << "dbm: setPhysical: " << flag << endl;
     isPhysical=flag;
-    Vector3d pos = this->meshptr->getPosition();
+    Vector3d pos = meshptr->getPosition();
     if (isPhysical) {
         bulletBodyPtr = system->addPhysicalObject(this, pos.x, pos.y, pos.z);
     }
@@ -147,8 +147,15 @@ btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj, double posX, double
     btRigidBody* body;
 
     cout << "dbm: adding physical object: " << obj << endl;
-    //colShape = new btSphereShape(btScalar(1.0));
-    colShape = new btBoxShape(btVector3(1.0, 1.0, 1.0));
+    /// complete hack for demo:
+    if (posY < 3055.0) {
+        cout << "dbm: shape=sphere " << posY << endl;
+        colShape = new btSphereShape(btScalar(1.0));
+    }
+    else {
+        cout << "dbm: shape=boxen " << posY << endl;
+        colShape = new btBoxShape(btVector3(1.0, 1.0, 1.0));
+    }
     collisionShapes.push_back(colShape);
     localInertia = btVector3(0,0,0);
     colShape->calculateLocalInertia(1.0f,localInertia);
