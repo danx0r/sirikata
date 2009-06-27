@@ -65,11 +65,17 @@ struct positionOrientation {
 class BulletSystem;
 
 class bulletObj : public MeshListener {
+    enum mode {
+        Disabled,               /// non-physical, remove from physics
+        Static,                 /// collisions, no dynamic movement (bullet mass==0)
+        Dynamic                 /// fully physical -- collision & dynamics
+    };
     void meshChanged (const URI &newMesh);
     void setScale (const Vector3f &newScale);
-    bool isPhysical;
+    bool isPhysical;            /// anything that bullet sees is physical
+    bool isDynamic;             /// but only some are dynamic (kinematic in bullet parlance)
     BulletSystem* system;
-    void setPhysical (const bool flag);
+    void setPhysical (const int mode);
 public:
     btRigidBody* bulletBodyPtr;
     Vector3d velocity;

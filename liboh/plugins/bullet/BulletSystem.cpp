@@ -87,9 +87,21 @@ void bulletObj::meshChanged (const URI &newMesh) {
 void bulletObj::setScale (const Vector3f &newScale) {
 }
 
-void bulletObj::setPhysical (const bool flag) {
-    cout << "dbm: setPhysical: " << flag << endl;
-    isPhysical=flag;
+void bulletObj::setPhysical (const int mode) {
+    cout << "dbm: setPhysical: " << mode << endl;
+    switch (mode) {
+    case Disabled:
+        isPhysical = false;
+        isDynamic = false;
+        break;
+    case Static:
+        isPhysical = true;
+        isDynamic = false;
+        break;
+    case Dynamic:
+        isPhysical = true;
+        isDynamic = true;
+    }
     if (isPhysical) {
         positionOrientation po;
         po.p = meshptr->getPosition();
@@ -104,20 +116,9 @@ void bulletObj::setPhysical (const bool flag) {
 }
 
 positionOrientation bulletObj::getBulletState() {
-    if (this->bulletBodyPtr && this->bulletBodyPtr->getMotionState()) {
-        btTransform trans;
-        this->bulletBodyPtr->getMotionState()->getWorldTransform(trans);
-        //positionOrientation po;
-        //btVector3 p = trans.getOrigin();
-        //btQuaternion q = trans.getRotation();
-        //po.p = Vector3d(p.getX(), p.getY(), p.getZ());
-        //po.o = Quaternion(q.getX(), q.getY(), q.getZ(), q.getW(), Quaternion::XYZW());
-        return positionOrientation(trans.getOrigin(),trans.getRotation());
-    }
-    else {
-        printf("dbm: error -- this is not a bullet object with a motionstate!\n");
-        return positionOrientation();
-    }
+    btTransform trans;
+    this->bulletBodyPtr->getMotionState()->getWorldTransform(trans);
+    return positionOrientation(trans.getOrigin(),trans.getRotation());
 }
 
 void bulletObj::setBulletState(positionOrientation po) {
