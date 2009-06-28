@@ -48,12 +48,12 @@ using Transfer::TransferManager;
 OptionValue *cdnConfigFile;
 InitializeGlobalOptions main_options("",
 //    simulationPlugins=new OptionValue("simulationPlugins","ogregraphics",OptionValueType<String>(),"List of plugins that handle simulation."),
-                                     cdnConfigFile=new OptionValue("cdnConfig","cdn = ($import=cdn.txt)",OptionValueType<String>(),"CDN configuration."),
-                                     NULL
-                                    );
+    cdnConfigFile=new OptionValue("cdnConfig","cdn = ($import=cdn.txt)",OptionValueType<String>(),"CDN configuration."),
+    NULL
+);
 
 std::string cut(const std::string &source, std::string::size_type start, std::string::size_type end) {
-    using namespace std;
+	using namespace std;
     while (isspace(source[start]) && start < end) {
         ++start;
     }
@@ -74,8 +74,7 @@ std::ostream &display (std::ostream &os, const OptionMap &om, const GlobalMap &g
         GlobalMap::const_iterator globaliter = globals.find(child);
         if (level>0 && globaliter != globals.end()) {
             os << "$" << (*globaliter).second;
-        }
-        else {
+        } else {
             os << child->getValue();
             if (!child->empty()) {
                 os << "(" << std::endl;
@@ -122,8 +121,7 @@ void handleCommand(const std::string &input, const OptionMapPtr &globalvariables
                 }
                 if (fp) {
                     fclose(fp);
-                }
-                else {
+                } else {
                     SILOG(main,error,"Configuration file "<<value<<" does not exist");
                 }
                 std::string::size_type subpos = 0;
@@ -131,17 +129,17 @@ void handleCommand(const std::string &input, const OptionMapPtr &globalvariables
                 parseConfig(str, options, options, subpos);
             }
         }
-    }
-    else {
+    } else {
         SILOG(main,error,"Unknown command "<<key<<"("<<value<<")");
     }
 }
 
 void parseConfig(
-    const std::string &input,
-    const OptionMapPtr &globalvariables,
-    const OptionMapPtr &options,
-    std::string::size_type &pos) {
+        const std::string &input,
+        const OptionMapPtr &globalvariables,
+        const OptionMapPtr &options,
+        std::string::size_type &pos)
+{
     std::string::size_type len = input.length();
     std::string key;
     std::string::size_type beginpos = pos;
@@ -156,8 +154,7 @@ void parseConfig(
         char ch;
         if (pos >= len) {
             ch = ')';
-        }
-        else {
+        } else {
             ch = input[pos];
         }
         if (state==KEYSTATE && ch == '#') {
@@ -166,8 +163,7 @@ void parseConfig(
                 if (input[pos]=='\n') break;
             }
             beginpos = pos;
-        }
-        else if (ch == '(' || ch==')' || (state != KEYSTATE && isspace(ch))) {
+        } else if (ch == '(' || ch==')' || (state != KEYSTATE && isspace(ch))) {
             if (state == VALUESTATE) {
                 std::string value(cut(input, beginpos, pos));
                 if (value.length()) {
@@ -181,8 +177,7 @@ void parseConfig(
                     }
                     if (key.length() && key[0]=='$') {
                         handleCommand(input,globalvariables,options,pos,key,value);
-                    }
-                    else {
+                    } else {
                         if (!toInsert) {
                             toInsert = (*options).get(key);
                             if (!toInsert) {
@@ -193,8 +188,8 @@ void parseConfig(
                     }
                     state = KEYSTATE;
                 }
-                beginpos = pos+1;
-            }
+                beginpos = pos+1; 
+           }
             if (ch == '(') {
                 if (!currentValue) {
                     currentValue = options->get(key);
@@ -207,18 +202,15 @@ void parseConfig(
                 parseConfig(input, globalvariables, currentValue, pos);
                 beginpos = pos+1;
                 state = KEYSTATE;
-            }
-            else if (ch == ')') {
+            } else if (ch == ')') {
                 break;
             }
-        }
-        else if (state == KEYSTATE && ch=='=') {
+        } else if (state == KEYSTATE && ch=='=') {
             key = cut(input, beginpos, pos);
             state = EQSTATE;
             beginpos = pos+1;
             currentValue = OptionMapPtr();
-        }
-        else if (state == EQSTATE && !isspace(ch)) {
+        } else if (state == EQSTATE && !isspace(ch)) {
             state = VALUESTATE;
         }
     }
@@ -272,9 +264,8 @@ int main ( int argc,const char**argv ) {
     TransferManager *tm;
     try {
         tm = initializeTransferManager((*transferOptions)["cdn"], eventManager);
-    }
-    catch (OptionDoesNotExist &err) {
-    SILOG(input,fatal,"Fatal Error: Failed to load CDN config: " << err.what());
+    } catch (OptionDoesNotExist &err) {
+        SILOG(input,fatal,"Fatal Error: Failed to load CDN config: " << err.what());
         std::cout << "Press enter to continue" << std::endl;
         std::cerr << "Press enter to continue" << std::endl;
         fgetc(stdin);
@@ -296,24 +287,19 @@ int main ( int argc,const char**argv ) {
     TimeSteppedSimulation *graphicsSystem=
         SimulationFactory::getSingleton()
         .getConstructor (graphicsPluginName) (provider,graphicsCommandArguments);
-    SILOG(cppoh,error,"dbm: initializing physics");
     TimeSteppedSimulation *physicsSystem=
         SimulationFactory::getSingleton()
         .getConstructor ( physicsPluginName ) ( provider,graphicsCommandArguments );
-    SILOG(cppoh,error,"dbm: checking physics");
     if (!physicsSystem) {
         SILOG(cppoh,error,"physicsSystem NULL!");
     }
     else {
         SILOG(cppoh,error,"physicsSystem: " << std::hex << (unsigned long)physicsSystem);
     }
-    SILOG(cppoh,error,"dbm: about to initialize");
     pm->initialize();
     if ( graphicsSystem ) {
         while ( graphicsSystem->tick() ) {
-            SILOG ( cppoh,error,"just called ogre tick" ); ///dbm
             physicsSystem->tick();
-            SILOG ( cppoh,error,"just called bullet tick" ); ///dbm
         }
     } else {
         SILOG(cppoh,error,"Fatal Error: Unable to load OGRE Graphics plugin. The PATH environment variable is ignored, so make sure you have copied the DLLs from dependencies/ogre/bin/ into the current directory. Sorry about this!");
