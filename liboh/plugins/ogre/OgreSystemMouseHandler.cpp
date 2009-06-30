@@ -550,6 +550,7 @@ private:
     }
 
     EventResponse import(EventPtr ev) {
+		std::cout << "input path name for import: " << std::endl;
 		std::string filename;
 		// a bit of a cludge right now, type name into console.
         fflush(stdin);
@@ -575,6 +576,26 @@ private:
 		return EventResponse::cancel();
 	}
 
+    EventResponse saveScene(EventPtr ev) {
+		std::cout << "saving new scene as scene_new.txt: " << std::endl;
+		FILE *output = fopen("scene_new.txt", "wt");
+		if (!output) {
+			perror("Failed to open scene_new.txt: ");
+			return EventResponse::cancel();
+		}
+		OgreSystem::SceneEntitiesMap::const_iterator iter;
+		for (iter = mParent->mSceneEntities.begin(); iter != mParent->mSceneEntities.end(); ++iter) {
+			dumpObject(output, iter->second);
+		}
+		fclose(output);
+		return EventResponse::cancel();
+	}
+
+	void dumpObject(FILE* f, Entity* e) {
+		Task::AbsTime now = Task::AbsTime::now();
+		ProxyPositionObjectPtr pp = e->getProxyPtr();
+		std::cout << "test output: " << pp->globalLocation(now) << std::endl;
+	}
 
     ///////////////// DEVICE FUNCTIONS ////////////////
 
@@ -669,6 +690,7 @@ private:
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDLK_LEFT,true);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDLK_RIGHT,true);
                 registerButtonListener(ev->mDevice, &MouseHandler::import, 'o', false, InputDevice::MOD_CTRL);
+                registerButtonListener(ev->mDevice, &MouseHandler::saveScene, 's', false, InputDevice::MOD_CTRL);
 
                 registerButtonListener(ev->mDevice, &MouseHandler::setDragMode, 'q');
                 registerButtonListener(ev->mDevice, &MouseHandler::setDragMode, 'w');
