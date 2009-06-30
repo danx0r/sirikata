@@ -597,6 +597,7 @@ private:
 		std::cout << "test output: " << pp->globalLocation(now) << std::endl;
 	}
 
+
     ///////////////// DEVICE FUNCTIONS ////////////////
 
     SubscriptionId registerAxisListener(const InputDevicePtr &dev,
