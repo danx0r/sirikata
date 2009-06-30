@@ -130,15 +130,10 @@ void ObjectConnections::bytesReceivedCallback(Network::Stream*stream, const Netw
 void ObjectConnections::forgeDisconnectionMessage(const ObjectReference&ref) {
     RoutableMessage rm;
     Protocol::DelObj delObj;
-<<<<<<< HEAD:libspace/src/ObjectConnections.cpp
-    rm.header().set_destination_object(mRegistrationService);//pretend object has contacted registration service
-    rm.header().set_source_object(ObjectReference::null());//and has appropriately set its identifier
-=======
     rm.header().set_destination_object(ObjectReference::spaceServiceID());//pretend object has contacted registration service
     rm.header().set_destination_port(Registration::PORT);    
     rm.header().set_source_object(ObjectReference::spaceServiceID());//and has appropriately set its identifier
     rm.header().set_source_port(PORT);
->>>>>>> 193b41823f7bcca715e4f9a932cf318dc9211a6c:libspace/src/ObjectConnections.cpp
     rm.body().add_message_names("DelObj");//with one purpose: to delete itself
     rm.body().add_message_arguments(NULL,0);    //and serialize the deleted object to the strong
     delObj.set_object_reference(ref.getAsUUID());
