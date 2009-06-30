@@ -3,7 +3,7 @@
 #include <util/RoutableMessage.hpp>
 namespace Sirikata {
 
-Registration::Registration(const ObjectReference&registrationServiceIdentifier,const SHA256&privateKey):mRegistrationServiceIdentifier(registrationServiceIdentifier),mPrivateKey(privateKey) {
+Registration::Registration(const SHA256&privateKey):mPrivateKey(privateKey) {
     
 }
 
@@ -22,15 +22,6 @@ bool Registration::endForwardingMessagesTo(MessageService*ms) {
         return false;
     mServices.erase(where);
     return true;
-}
-void Registration::processMessage(const ObjectReference*ref,MemoryReference message){
-    
-    RoutableMessageHeader hdr;
-    MemoryReference message_body=hdr.ParseFromArray(message.data(),message.size());
-    if (!hdr.has_source_object()&&ref) {
-        hdr.set_source_object(*ref);
-    }
-    this->processMessage(hdr,message_body);
 }
 
 void Registration::processMessage(const RoutableMessageHeader&header,MemoryReference message_body) {
@@ -63,7 +54,9 @@ void Registration::asyncRegister(const RoutableMessageHeader&header,const Routab
                 retObj.set_bounding_sphere(newObj.bounding_sphere());
                 retObj.set_object_reference(UUID(SHA256::computeDigest(evidence,sizeof(evidence)).rawData().begin(),UUID::static_size));
                 destination_header.set_destination_object(header.source_object());
-                destination_header.set_source_object(mRegistrationServiceIdentifier);
+                destination_header.set_destination_port(header.source_port());
+                destination_header.set_source_object(ObjectReference::spaceServiceID());
+                destination_header.set_source_port(PORT);
                 retval.add_message_names("RetObj");
                 if (retval.message_arguments_size()==0) {
                     retval.add_message_arguments(std::string());
@@ -86,7 +79,8 @@ void Registration::asyncRegister(const RoutableMessageHeader&header,const Routab
                 if (header.source_object()==ObjectReference::null()) {
                     RoutableMessageHeader destination_header;
                     destination_header.set_destination_object(ObjectReference(delObj.object_reference()));
-                    destination_header.set_source_object(mRegistrationServiceIdentifier);
+                    destination_header.set_source_object(ObjectReference::spaceServiceID());
+                    destination_header.set_source_port(PORT);
                     for (std::vector<MessageService*>::iterator i=mServices.begin(),ie=mServices.end();i!=ie;++i) {
                         std::string body_string;
                         body.SerializeToString(&body_string);

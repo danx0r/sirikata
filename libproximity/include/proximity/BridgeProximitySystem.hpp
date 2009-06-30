@@ -59,15 +59,6 @@ class BridgeProximitySystem : public ObjectSpaceBridgeProximitySystem<MessageSer
             }
         }
         
-        /**
-         * Process a message that may be meant for the space system
-         */
-        virtual void processMessage(const ObjectReference*object,
-                                    MemoryReference message){
-            for (std::vector<MessageService*>::iterator i=mMessageServices.begin(),ie=mMessageServices.end();i!=ie;++i) {
-                (*i)->processMessage(object,message);
-            }
-        }        
     }mMulticast;
 protected:
     virtual bool forwardThisName(bool registration_or_disconnection, const std::string&name) {
@@ -118,8 +109,12 @@ protected:
         }
     }
 public:
+    enum {
+        PORT=3
+    };
+
     ProximityConnection *mProximityConnection;
-    BridgeProximitySystem(ProximityConnection*connection,const ObjectReference&registrationObject) : ObjectSpaceBridgeProximitySystem<MessageService*>(&mMulticast,registrationObject),mProximityConnection(connection) {
+    BridgeProximitySystem(ProximityConnection*connection,const unsigned int registrationPort) : ObjectSpaceBridgeProximitySystem<MessageService*>(&mMulticast,registrationPort),mProximityConnection(connection) {
         bool retval=mProximityConnection->forwardMessagesTo(this);
         assert(retval);
     }
@@ -168,28 +163,12 @@ public:
      * Process a message that may be meant for the proximity system
      * \returns true if object was deleted
      */
-    virtual void processMessage(const ObjectReference*object,
-                                MemoryReference message) {
-        RoutableMessageHeader mesg;
-        MemoryReference remainder=mesg.ParseFromArray(message.data(),message.size());
-        if (this->internalProcessOpaqueProximityMessage(object,
-                                                        mesg,
-                                                        remainder.data(),
-                                                        remainder.size())==ProximitySystem::OBJECT_DELETED) {
-            if (object)
-                this->mProximityConnection->deleteObjectStream(*object);
-        }
-    }
-    /**
-     * Process a message that may be meant for the proximity system
-     * \returns true if object was deleted
-     */
     virtual void processMessage(const RoutableMessageHeader& mesg,
                                 MemoryReference message_body) {
         if (this->internalProcessOpaqueProximityMessage(mesg.has_source_object()?&mesg.source_object():NULL,
                                                         mesg,
                                                         message_body.data(),
-                                                        message_body.size())==ProximitySystem::OBJECT_DELETED) {
+                                                        message_body.size(),false)==ProximitySystem::OBJECT_DELETED) {
             if (mesg.has_source_object())
                 this->mProximityConnection->deleteObjectStream(mesg.source_object());
         }

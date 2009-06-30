@@ -1,5 +1,5 @@
-/*  Sirikata libspace -- Location Services
- *  Loc.hpp
+/*  Sirikata libspace -- Registration Services
+ *  Registration.hpp
  *
  *  Copyright (c) 2009, Daniel Reiter Horn
  *  All rights reserved.
@@ -30,35 +30,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SIRIKATA_LOC_HPP_
-#define _SIRIKATA_LOC_HPP_
+#ifndef _SIRIKATA_ROUTER_HPP_
+#define _SIRIKATA_ROUTER_HPP_
 
 #include <space/Platform.hpp>
-#include <util/ObjectReference.hpp>
-
 namespace Sirikata {
-namespace Protocol {
-class ObjLoc;
-}
-class Loc;
-class Oseg;
-class Cseg;
-class SIRIKATA_SPACE_EXPORT Loc : public MessageService {
+class SIRIKATA_SPACE_EXPORT Router : public MessageService {
     std::vector<MessageService*> mServices;
-    void processMessage(const ObjectReference&object_reference,const Protocol::ObjLoc&loc);
 public:
     enum {
-        PORT=2
+        PORT=4
     };
-    Loc();
-    ~Loc();
-    bool forwardMessagesTo(MessageService*);
-    bool endForwardingMessagesTo(MessageService*);
+    Router();
+    ~Router();
     void processMessage(const RoutableMessageHeader&header,
                         MemoryReference message_body);
-
 }; // class Space
 
 } // namespace Sirikata
 
-#endif //_SIRIKATA_LOC_HPP
+#endif //_SIRIKATA_REGISTRATION_HPP

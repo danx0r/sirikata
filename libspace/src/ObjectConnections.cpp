@@ -36,23 +36,21 @@
 #include "util/ObjectReference.hpp"
 #include "Space_Sirikata.pbj.hpp"
 #include "util/RoutableMessage.hpp"
+#include "space/Registration.hpp"
 #include "space/ObjectConnections.hpp"
 namespace Sirikata {
 ObjectConnections::ObjectConnections(Network::StreamListener*listener,
-                                     const Network::Address&listenAddress,
-                                     const ObjectReference&registrationServiceIdentifier,
-                                     const String&introductoryMessage) {
+                                     const Network::Address&listenAddress) {
     
-    mSpaceServiceIntroductionMessage=introductoryMessage;
+    //mSpaceServiceIntroductionMessage=introductoryMessage;
     mSpace=NULL;
     mPerObjectTemporarySizeMaximum=8192;
     mPerObjectTemporaryNumMessagesMaximum=64;
-    Protocol::SpaceServices svc;
-    svc.set_pre_connection_buffer(mPerObjectTemporarySizeMaximum);
-    svc.set_max_pre_connection_messages(mPerObjectTemporaryNumMessagesMaximum);
-    svc.AppendToString(&mSpaceServiceIntroductionMessage);
+//    Protocol::SpaceServices svc;
+//    svc.set_pre_connection_buffer(mPerObjectTemporarySizeMaximum);
+//    svc.set_max_pre_connection_messages(mPerObjectTemporaryNumMessagesMaximum);
+//    svc.AppendToString(&mSpaceServiceIntroductionMessage);
     mListener=listener;
-    mRegistrationService=registrationServiceIdentifier;
     using std::tr1::placeholders::_1;    using std::tr1::placeholders::_2;
     mListener->listen(listenAddress,
                       std::tr1::bind(&ObjectConnections::newStreamCallback,this,_1,_2));
@@ -79,10 +77,10 @@ void ObjectConnections::bytesReceivedCallback(Network::Stream*stream, const Netw
     MemoryReference message_body=hdr.ParseFromArray(chunkRef.data(),chunkRef.size());
     //munge header to reflect known ID
     hdr.set_source_object(ObjectReference(where->second.uuid()));
-    if (((!hdr.has_destination_object())||hdr.destination_object()==ObjectReference::null())&&message_body.size()==0) {
+    if (false&&((!hdr.has_destination_object())||hdr.destination_object()==ObjectReference::null())&&message_body.size()==0) {
         //if our message is size 0 and header nowhere or to null(), assume it's the object host request for service addresses
         stream->send(MemoryReference(mSpaceServiceIntroductionMessage),Network::ReliableOrdered);//send the tuned packet with all information needed to know services
-    }else if (hdr.has_destination_object()&&hdr.destination_object()==mRegistrationService) {
+    }else if (hdr.has_destination_object()&&hdr.destination_object()==ObjectReference::spaceServiceID()&&hdr.destination_port()==PORT) {
         //this is a NewObj request Parse the body to find out
         RoutableMessageBody rmb;
         bool success=rmb.ParseFromArray(message_body.data(),message_body.size());
@@ -132,8 +130,15 @@ void ObjectConnections::bytesReceivedCallback(Network::Stream*stream, const Netw
 void ObjectConnections::forgeDisconnectionMessage(const ObjectReference&ref) {
     RoutableMessage rm;
     Protocol::DelObj delObj;
+<<<<<<< HEAD:libspace/src/ObjectConnections.cpp
     rm.header().set_destination_object(mRegistrationService);//pretend object has contacted registration service
     rm.header().set_source_object(ObjectReference::null());//and has appropriately set its identifier
+=======
+    rm.header().set_destination_object(ObjectReference::spaceServiceID());//pretend object has contacted registration service
+    rm.header().set_destination_port(Registration::PORT);    
+    rm.header().set_source_object(ObjectReference::spaceServiceID());//and has appropriately set its identifier
+    rm.header().set_source_port(PORT);
+>>>>>>> 193b41823f7bcca715e4f9a932cf318dc9211a6c:libspace/src/ObjectConnections.cpp
     rm.body().add_message_names("DelObj");//with one purpose: to delete itself
     rm.body().add_message_arguments(NULL,0);    //and serialize the deleted object to the strong
     delObj.set_object_reference(ref.getAsUUID());
@@ -220,46 +225,12 @@ bool ObjectConnections::endForwardingMessagesTo(MessageService*ms) {
     return false;
 }
 
-void ObjectConnections::processMessage(const ObjectReference*ref,MemoryReference message){
-    ObjectReference newRef;
-    RoutableMessageHeader hdr;
-    MemoryReference body_array=hdr.ParseFromArray(message.data(),message.size());
-    bool disconnectionAttempt=false;
-    if (ref&&*ref==mRegistrationService) {//message from registration service
-        if (!hdr.has_source_object())
-            hdr.set_source_object(*ref);
-        if (processNewObject(hdr,body_array, newRef)) {//it could be a new object
-            hdr.set_destination_object(newRef);//it is a new object, complete with permanent ObjectReference
-            ref=&newRef;
-        }else {
-            disconnectionAttempt=true;//it was a forcable disconnection (potentially at user request)
-        }
-    }else {
-        if (ref&&!hdr.has_destination_object()) {
-            hdr.set_destination_object(*ref);
-        }
-        if (hdr.has_source_object()&&hdr.source_object()==mRegistrationService) {//repeated logic if registration was set in packet
-            if (processNewObject(hdr,body_array,newRef)) {
-                hdr.set_destination_object(newRef);
-                ref=&newRef;
-            }else {
-                disconnectionAttempt=true;
-            }
-        }
-    }
-    processExistingObject(hdr,body_array,!disconnectionAttempt);//process the message but do not forward if a disconection attemp was made
-    if (disconnectionAttempt) {
-        //Server ban of user or confirm of disconnect
-        shutdownConnection(hdr.destination_object());//destroy stream if destination object was forcably removed by space
-    }
-
-}
 void ObjectConnections::processMessage(const RoutableMessageHeader&header,
                     MemoryReference message_body){
     RoutableMessageHeader newHeader;
     const RoutableMessageHeader *hdr=&header;
     bool disconnectionAttempt=false;
-    if (header.source_object()==mRegistrationService) {//message from registration service
+    if (header.has_source_object()&&header.source_object()==ObjectReference::spaceServiceID()&&header.source_port()==Registration::PORT) {//message from registration service
         ObjectReference newRef;
         if (processNewObject(header,message_body,newRef)) {//it could be a new object
             newHeader=header;

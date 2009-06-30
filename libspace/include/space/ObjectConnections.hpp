@@ -42,6 +42,9 @@ namespace Sirikata {
  * Permanent streams are generated when the Registration service returns a valid ObjectReference
  */
 class SIRIKATA_SPACE_EXPORT ObjectConnections : public MessageService {
+    enum {
+        PORT=16383
+    };
     typedef std::vector<Network::Stream*> StreamSet;
     ///Object with active ID's (map from ObjectReference to Stream*)
     typedef std::tr1::unordered_map<UUID,StreamSet,UUID::Hasher>StreamMap;
@@ -100,8 +103,6 @@ class SIRIKATA_SPACE_EXPORT ObjectConnections : public MessageService {
     size_t mPerObjectTemporaryNumMessagesMaximum;
     ///The listener class which retrieves new connections from object hosts
     Network::StreamListener*mListener;
-    ///ObjectRefernece for the Registration service so those messages can be directly sent there instead of waiting on mPendingMessages
-    ObjectReference mRegistrationService;
     ///The message that lets users know which services the space supports and on what ObjectReferences
     String mSpaceServiceIntroductionMessage;
     ///processes a message from the RegistrationService: returns true if the object is a new object (false if the object was deleted)
@@ -125,9 +126,7 @@ class SIRIKATA_SPACE_EXPORT ObjectConnections : public MessageService {
     void shutdownConnection(const ObjectReference&ref);
   public:
     ObjectConnections(Network::StreamListener*listener,                      
-                      const Network::Address &listenAddress,
-                      const ObjectReference&registrationServiceIdentifier,
-                      const std::string&spaceServiceIntroductionMessage );
+                      const Network::Address &listenAddress);
     ~ObjectConnections();
     ///If there's an active connection to a given object reference
     Network::Stream* activeConnectionTo(const ObjectReference&);
@@ -137,8 +136,6 @@ class SIRIKATA_SPACE_EXPORT ObjectConnections : public MessageService {
     bool forwardMessagesTo(MessageService*);
     ///Upon destruction the space should deregister itself
     bool endForwardingMessagesTo(MessageService*);
-    ///Processes a message destined for an Object referenced by either temporary (from registrationService) or permanent (from anyone else) ID ObjectReference
-    void processMessage(const ObjectReference*ref,MemoryReference message);
     ///Processes a message destined for an Object referenced by either temporary (from registrationService) or permanent (from anyone else) ID in the header
     void processMessage(const RoutableMessageHeader&header,
                         MemoryReference message_body);
