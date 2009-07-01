@@ -615,13 +615,19 @@ private:
 			ambientPower = LightEntity::computeClosestPower(linfo.mDiffuseColor, linfo.mAmbientColor, linfo.mPower);
 			shadowPower = LightEntity::computeClosestPower(linfo.mSpecularColor, linfo.mShadowColor,  linfo.mPower);
 
-			fprintf(fp, "<1 1 1> {0 0 0 0} %s [%f %f %f %f] [%f %f %f %f] <%lf %f %f %f> <%f %f> [%f] %f %d <%f %f %f>\n", typestr,linfo.mDiffuseColor.x,linfo.mDiffuseColor.y,linfo.mDiffuseColor.z,ambientPower,linfo.mSpecularColor.x,linfo.mSpecularColor.y,linfo.mSpecularColor.z,shadowPower,linfo.mLightRange,linfo.mConstantFalloff,linfo.mLinearFalloff,linfo.mQuadraticFalloff,linfo.mConeInnerRadians,linfo.mConeOuterRadians,linfo.mPower,linfo.mConeFalloff,(int)linfo.mCastsShadow,0.0,1.0,0.0);
+			fprintf(fp, "<1 1 1> %s [%f %f %f %f] [%f %f %f %f] <%lf %f %f %f> <%f %f> [%f] %f %d <%f %f %f>\n", typestr,linfo.mDiffuseColor.x,linfo.mDiffuseColor.y,linfo.mDiffuseColor.z,ambientPower,linfo.mSpecularColor.x,linfo.mSpecularColor.y,linfo.mSpecularColor.z,shadowPower,linfo.mLightRange,linfo.mConstantFalloff,linfo.mLinearFalloff,linfo.mQuadraticFalloff,linfo.mConeInnerRadians,linfo.mConeOuterRadians,linfo.mPower,linfo.mConeFalloff,(int)linfo.mCastsShadow,0.0,1.0,0.0);
 		} else if (mesh) {
-			std::string uri = mesh->getMesh().toString();
+			URI uri = mesh->getMesh();
+			std::string uristr = uri.toString();
+			if (uri.proto().empty()) {
+				uristr = "NULL";
+			}
 			const physicalParameters &phys = mesh->getPhysical();
-			fprintf(fp, "<%f %f %f> {%d %f %f %f} %s\n",mesh->getScale().x,mesh->getScale().y,mesh->getScale().z, (int)phys.mode, phys.density, phys.friction, phys.bounce, uri.c_str());
+			fprintf(fp, "<%f %f %f> {%d %f %f %f} %s\n",mesh->getScale().x,mesh->getScale().y,mesh->getScale().z, (int)phys.mode, phys.density, phys.friction, phys.bounce, uristr.c_str());
 		} else if (camera) {
-			fprintf(fp, "<1 1 1> {0 0 0 0} CAMERA\n");
+			fprintf(fp, "<1 1 1> CAMERA\n");
+		} else {
+			fprintf(fp, "<1 1 1> NULL\n");
 		}
 		//std::cout << "test output: " <<  << std::endl;
 	}
