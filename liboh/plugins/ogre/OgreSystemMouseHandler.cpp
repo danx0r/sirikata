@@ -591,10 +591,39 @@ private:
 		return EventResponse::cancel();
 	}
 
-	void dumpObject(FILE* f, Entity* e) {
+	void dumpObject(FILE* fp, Entity* e) {
 		Task::AbsTime now = Task::AbsTime::now();
-		ProxyPositionObjectPtr pp = e->getProxyPtr();
-		std::cout << "test output: " << pp->globalLocation(now) << std::endl;
+		ProxyPositionObject *pp = e->getProxyPtr().get();
+		Location loc = pp->globalLocation(now);
+		ProxyCameraObject* camera = dynamic_cast<ProxyCameraObject*>(pp);
+		ProxyLightObject* light = dynamic_cast<ProxyLightObject*>(pp);
+		ProxyMeshObject* mesh = dynamic_cast<ProxyMeshObject*>(pp);
+		if (camera || mesh || light) {
+			fprintf(fp,"(%f %f %f) [%f %f %f %f] ",
+				loc.getPosition().x,loc.getPosition().y,loc.getPosition().z,loc.getOrientation().w,loc.getOrientation().x,loc.getOrientation().y,loc.getOrientation().z);
+		}
+		if (light) {
+			const char *typestr = "directional";
+			const LightInfo &linfo = light->getLastLightInfo();
+			if (linfo.mType == LightInfo::POINT) {
+				typestr = "point";
+			}
+			if (linfo.mType == LightInfo::SPOTLIGHT) {
+				typestr = "spotlight";
+			}
+			float32 ambientPower, shadowPower;
+			ambientPower = LightEntity::computeClosestPower(linfo.mDiffuseColor, linfo.mAmbientColor, linfo.mPower);
+			shadowPower = LightEntity::computeClosestPower(linfo.mSpecularColor, linfo.mShadowColor,  linfo.mPower);
+
+			fprintf(fp, "<1 1 1> {0 0 0 0} %s [%f %f %f %f] [%f %f %f %f] <%lf %f %f %f> <%f %f> [%f] %f %d <%f %f %f>\n", typestr,linfo.mDiffuseColor.x,linfo.mDiffuseColor.y,linfo.mDiffuseColor.z,ambientPower,linfo.mSpecularColor.x,linfo.mSpecularColor.y,linfo.mSpecularColor.z,shadowPower,linfo.mLightRange,linfo.mConstantFalloff,linfo.mLinearFalloff,linfo.mQuadraticFalloff,linfo.mConeInnerRadians,linfo.mConeOuterRadians,linfo.mPower,linfo.mConeFalloff,(int)linfo.mCastsShadow,0.0,1.0,0.0);
+		} else if (mesh) {
+			std::string uri = mesh->getMesh().toString();
+			const physicalParameters &phys = mesh->getPhysical();
+			fprintf(fp, "<%f %f %f> {%d %f %f %f} %s\n",mesh->getScale().x,mesh->getScale().y,mesh->getScale().z, (int)phys.mode, phys.density, phys.friction, phys.bounce, uri.c_str());
+		} else if (camera) {
+			fprintf(fp, "<1 1 1> {0 0 0 0} CAMERA\n");
+		}
+		//std::cout << "test output: " <<  << std::endl;
 	}
 
 
