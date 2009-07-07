@@ -184,9 +184,9 @@ btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj,
     else {
         //experimental trimesh
         vertices[0].setValue(-sizeX*.5, 0, -sizeX*.5);
-        vertices[1].setValue( sizeX*.5, -.1, -sizeX*.5);
+        vertices[1].setValue( sizeX*.5, -.5, -sizeX*.5);
         vertices[2].setValue( sizeX*.5, -.1,  sizeX*.5);
-        vertices[3].setValue(-sizeX*.5, 0,  sizeX*.5);
+        vertices[3].setValue(-sizeX*.5, -.5,  sizeX*.5);
 
         btTriangleIndexVertexArray* indexarray = new btTriangleIndexVertexArray(
             2,                      // # of triangles (int)
