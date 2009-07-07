@@ -181,10 +181,10 @@ btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj,
     else {
         //experimental trimesh
         btVector3 vertices[4];
-        vertices[0].setValue(-sizeX, -sizeX, 0.0);
-        vertices[1].setValue( sizeX, -sizeX, 0.0);
-        vertices[2].setValue( sizeX,  sizeX, 0.0);
-        vertices[3].setValue(-sizeX,  sizeX, 0.0);
+        vertices[0].setValue(-sizeX, 0, -sizeX);
+        vertices[1].setValue( sizeX, 0, -sizeX);
+        vertices[2].setValue( sizeX, 0,  sizeX);
+        vertices[3].setValue(-sizeX, 0,  sizeX);
         int indices[] = {0, 1, 2, 0, 2, 3};
         btTriangleIndexVertexArray* indexarray = new btTriangleIndexVertexArray(
             2,                      // # of triangles (int)
@@ -194,7 +194,7 @@ btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj,
             (btScalar*) &vertices[0].x(),              // (btScalar*) pointer to vertex list
             sizeof(btVector3));    // sizeof(btVector3)
         btVector3 aabbMin(-1000,-1000,-1000),aabbMax(1000,1000,1000);
-        colShape  = new btBvhTriangleMeshShape(indexarray,true,aabbMin, aabbMax);
+        colShape  = new btBvhTriangleMeshShape(indexarray,false, false);
         DEBUG_OUTPUT(cout << "dbm: shape=trimesh colShape: " << colShape << endl);
 
         /*
