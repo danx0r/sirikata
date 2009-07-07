@@ -30,7 +30,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//#include <iostream>
 #include <oh/Platform.hpp>
 #include "BulletSystem.hpp"
 #include <oh/SimulationFactory.hpp>
@@ -82,8 +81,11 @@ SIRIKATA_PLUGIN_EXPORT_C int refcount() {
 namespace Sirikata {
 
 void bulletObj::meshChanged (const URI &newMesh) {
-    DEBUG_OUTPUT(cout << "dbm:    meshlistener: " << newMesh << endl;)
+    DEBUG_OUTPUT(cout << "dbm:    meshlistener: " << newMesh << " URI: " << meshptr->getMesh() << endl;)
     meshname = newMesh;
+/*    Meru::GraphicsResourceManager* grm = Meru::GraphicsResourceManager::getSingletonPtr();
+    Meru::SharedResourcePtr newMeshPtr = grm->getResourceAsset(newMesh, Meru::GraphicsResource::MESH);
+    meshresource->setMeshResource(newMeshPtr);*/
 }
 
 void bulletObj::setScale (const Vector3f &newScale) {
@@ -98,8 +100,8 @@ void bulletObj::setScale (const Vector3f &newScale) {
 }
 
 void bulletObj::setPhysical (const physicalParameters &pp) {
-    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << (long)this << " " << pp.mode
-                 << " static=" << (int)Static << " dynamic=" << (int)Dynamic << endl;)
+    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << (long)this << " mode=" << pp.mode << " mesh: " << meshname 
+            << " URI: " << meshptr->getMesh() << endl;)
     switch (pp.mode) {
     case Disabled:
         isPhysical = false;
