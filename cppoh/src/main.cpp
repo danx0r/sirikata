@@ -106,7 +106,7 @@ void handleCommand(const std::string &input, const OptionMapPtr &globalvariables
             std::string fname = "./" + value;
             if (value.find(".txt")!=std::string::npos) {
                 FILE *fp = NULL;
-                for (int i = 0; i < 3 && fp == NULL; i++) {
+                for (int i = 0; i < 4 && fp == NULL; i++) {
                     fp = fopen(fname.c_str(),"rt");
                     fname = "./."+fname;
                 }
@@ -282,11 +282,13 @@ int main ( int argc,const char**argv ) {
         os << "--workqueue=" << workQueue << " ";
         graphicsCommandArguments = os.str();
     }
-    String graphicsPluginName("ogregraphics");
+    String graphicsPluginName ( "ogregraphics" );
     String physicsPluginName ( "bulletphysics" );
+    SILOG(cppoh,error,"dbm: initializing graphics");
     TimeSteppedSimulation *graphicsSystem=
         SimulationFactory::getSingleton()
-        .getConstructor (graphicsPluginName) (provider,graphicsCommandArguments);
+        .getConstructor ( graphicsPluginName ) ( provider,graphicsCommandArguments );
+    SILOG(cppoh,error,"dbm: initializing physics");
     TimeSteppedSimulation *physicsSystem=
         SimulationFactory::getSingleton()
         .getConstructor ( physicsPluginName ) ( provider,graphicsCommandArguments );

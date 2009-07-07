@@ -35,6 +35,7 @@
 #include <oh/ProxyCameraObject.hpp>
 #include <oh/ProxyLightObject.hpp>
 #include <oh/ProxyMeshObject.hpp>
+#include <oh/ProxyWebViewObject.hpp>
 
 namespace Sirikata {
 
@@ -86,6 +87,16 @@ class DemoProxyManager :public ProxyManager {
         myObj->resetPositionVelocity(Time::now(), location);
         myObj->update(linfo);
         return myObj;
+    }
+    ProxyObjectPtr addWebViewObject(const std::string &url, int width=500, int height=400) {
+        SpaceObjectReference myId((SpaceID(UUID::null())),(ObjectReference(UUID::random())));
+		std::tr1::shared_ptr <ProxyWebViewObject> mWebView(new ProxyWebViewObject(this, SpaceObjectReference(myId)));
+        	mObjects.insert(ObjectMap::value_type(myId, mWebView));
+		notify(&ProxyCreationListener::createProxy,mWebView);
+		mWebView->resize(width, height);
+		mWebView->setPosition(OverlayPosition(RP_TOPRIGHT));
+		mWebView->loadURL(url);
+		return mWebView;
     }
 
     void loadSceneObject(FILE *fp) {
@@ -222,6 +233,9 @@ public:
     void initialize(){
         notify(&ProxyCreationListener::createProxy,mCamera);
         mCamera->attach("",0,0);
+
+		addWebViewObject("http://sirikata.com/cgi-bin/virtualchat/irc.cgi", 400, 250);
+
         mCamera->resetPositionVelocity(Time::now(),
                                        Location(Vector3d(0,0,50.), Quaternion::identity(),
                                                 Vector3f::nil(), Vector3f::nil(), 0.));
