@@ -40,8 +40,8 @@
 using namespace std;
 static int core_plugin_refcount = 0;
 
-//#define DEBUG_OUTPUT(x) x
-#define DEBUG_OUTPUT(x)
+#define DEBUG_OUTPUT(x) x
+//#define DEBUG_OUTPUT(x)
 
 SIRIKATA_PLUGIN_EXPORT_C void init() {
     using namespace Sirikata;
@@ -173,10 +173,45 @@ btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj,
         colShape = new btSphereShape(btScalar(sizeX));
         mass = sizeX*sizeX*sizeX * density * 4.189;                         /// Thanks, Wolfram Alpha!
     }
-    else {
+    else if (sizeY>0.11) {
         DEBUG_OUTPUT(cout << "dbm: shape=boxen " << endl;)
         colShape = new btBoxShape(btVector3(sizeX*.5, sizeY*.5, sizeZ*.5));
         mass = sizeX * sizeY * sizeZ * density;
+    }
+    else {
+        //experimental trimesh
+        btVector3 vertices[4];
+        vertices[0].setValue(-sizeX, -sizeX, 0.0);
+        vertices[1].setValue( sizeX, -sizeX, 0.0);
+        vertices[2].setValue( sizeX,  sizeX, 0.0);
+        vertices[3].setValue(-sizeX,  sizeX, 0.0);
+        int indices[] = {0, 1, 2, 0, 2, 3};
+        btTriangleIndexVertexArray* indexarray = new btTriangleIndexVertexArray(
+            2,                      // # of triangles (int)
+            indices,               // ptr to list of indices (int)
+            sizeof(int)*3,          // in bytes (typically 3X sizeof(int) = 12
+            4,                      // # of vertices (int)
+            (btScalar*) &vertices[0].x(),              // (btScalar*) pointer to vertex list
+            sizeof(btVector3));    // sizeof(btVector3)
+        btVector3 aabbMin(-1000,-1000,-1000),aabbMax(1000,1000,1000);
+        colShape  = new btBvhTriangleMeshShape(indexarray,true,aabbMin, aabbMax);
+        DEBUG_OUTPUT(cout << "dbm: shape=trimesh colShape: " << colShape << endl);
+
+        /*
+        collisionShapes.push_back(colShape);
+        startTransform.setIdentity();
+        startTransform.setOrigin(btVector3(po.p.x,po.p.y,po.p.z));
+        startTransform.setRotation(btQuaternion(po.o.x, po.o.y, po.o.z, po.o.w));
+        localInertia = btVector3(0,0,0);
+        startTransform.setIdentity();
+        startTransform.setOrigin(btVector3(po.p.x,po.p.y,po.p.z));
+        startTransform.setRotation(btQuaternion(po.o.x, po.o.y, po.o.z, po.o.w));
+        cout << "debug getShapeType: " << colShape->getShapeType() << "|" << INVALID_SHAPE_PROXYTYPE << endl;
+        btAssert(colShape->getShapeType() != INVALID_SHAPE_PROXYTYPE);
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(0, 0, colShape, localInertia);
+        body = new btRigidBody(rbInfo);
+        body->setCollisionFlags( body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+        */
     }
     collisionShapes.push_back(colShape);
     localInertia = btVector3(0,0,0);
@@ -198,7 +233,6 @@ btRigidBody* BulletSystem::addPhysicalObject(bulletObj* obj,
         body->setActivationState(DISABLE_DEACTIVATION);
     }
     dynamicsWorld->addRigidBody(body);
-
     physicalObjects.push_back(obj);
     return body;
 }
