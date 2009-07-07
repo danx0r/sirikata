@@ -1,7 +1,7 @@
-/*  Sirikata libspace -- Registration Services
- *  Registration.hpp
+/*  Sirikata Object Host -- Proxy WebView Object
+ *  ProxyWebViewObject.hpp
  *
- *  Copyright (c) 2009, Daniel Reiter Horn
+ *  Copyright (c) 2009, Adam Jean Simmons
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -30,21 +30,32 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SIRIKATA_ROUTER_HPP_
-#define _SIRIKATA_ROUTER_HPP_
+#ifndef _SIRIKATA_PROXY_WEBVIEW_OBJECT_HPP_
+#define _SIRIKATA_PROXY_WEBVIEW_OBJECT_HPP_
 
-#include <space/Platform.hpp>
+#include "WebViewListener.hpp"
+#include "ProxyObject.hpp"
+
 namespace Sirikata {
 
-class SIRIKATA_SPACE_EXPORT Router : public MessageService {
-    std::vector<MessageService*> mServices;
+typedef Provider<WebViewListener*> WebViewProvider;
+
+class SIRIKATA_OH_EXPORT ProxyWebViewObject 
+	: public WebViewProvider,
+		public ProxyObject
+{
 public:
-	Router(){}
-	~Router(){}
-    void processMessage(const RoutableMessageHeader&header,
-		                MemoryReference message_body){}
-}; // class Space
+    ProxyWebViewObject(ProxyManager* man, const SpaceObjectReference& id);
+	void loadURL(const std::string& url);
+	void loadFile(const std::string& filename);
+	void loadHTML(const std::string& html);
+	void evaluateJS(const std::string& javascript);
+	void setPosition(const OverlayPosition& position);
+	void hide();
+	void show();
+	void resize(int width, int height);
+};
 
-} // namespace Sirikata
+}
 
-#endif //_SIRIKATA_REGISTRATION_HPP
+#endif

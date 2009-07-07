@@ -1,7 +1,7 @@
-/*  Sirikata libspace -- Registration Services
- *  Registration.hpp
+/*  Sirikata Object Host -- Proxy WebView Object
+ *  ProxyWebViewObject.cpp
  *
- *  Copyright (c) 2009, Daniel Reiter Horn
+ *  Copyright (c) 2009, Adam Jean Simmons
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -30,21 +30,51 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SIRIKATA_ROUTER_HPP_
-#define _SIRIKATA_ROUTER_HPP_
+#include <oh/ProxyWebViewObject.hpp>
 
-#include <space/Platform.hpp>
-namespace Sirikata {
+using namespace Sirikata;
 
-class SIRIKATA_SPACE_EXPORT Router : public MessageService {
-    std::vector<MessageService*> mServices;
-public:
-	Router(){}
-	~Router(){}
-    void processMessage(const RoutableMessageHeader&header,
-		                MemoryReference message_body){}
-}; // class Space
+ProxyWebViewObject::ProxyWebViewObject(ProxyManager* man, const SpaceObjectReference& id)
+	: ProxyObject(man, id)
+{
+}
 
-} // namespace Sirikata
+void ProxyWebViewObject::loadURL(const std::string& url)
+{
+	WebViewProvider::notify(&WebViewListener::loadURL, url);
+}
 
-#endif //_SIRIKATA_REGISTRATION_HPP
+void ProxyWebViewObject::loadFile(const std::string& filename)
+{
+	WebViewProvider::notify(&WebViewListener::loadFile, filename);
+}
+
+void ProxyWebViewObject::loadHTML(const std::string& html)
+{
+	WebViewProvider::notify(&WebViewListener::loadHTML, html);
+}
+
+void ProxyWebViewObject::evaluateJS(const std::string& javascript)
+{
+	WebViewProvider::notify(&WebViewListener::evaluateJS, javascript);
+}
+
+void ProxyWebViewObject::setPosition(const OverlayPosition& position)
+{
+	WebViewProvider::notify(&WebViewListener::setPosition, position);
+}
+
+void ProxyWebViewObject::hide()
+{
+	WebViewProvider::notify(&WebViewListener::hide);
+}
+
+void ProxyWebViewObject::show()
+{
+	WebViewProvider::notify(&WebViewListener::show);
+}
+
+void ProxyWebViewObject::resize(int width, int height)
+{
+	WebViewProvider::notify(&WebViewListener::resize, width, height);
+}

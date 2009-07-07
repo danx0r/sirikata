@@ -1,6 +1,39 @@
+/*  Sirikata libspace - Registration Services
+ *  Registration.cpp
+ *
+ *  Copyright (c) 2009, Daniel Reiter Horn
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are
+ *  met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ *  * Neither the name of Sirikata nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <space/Registration.hpp>
 #include <Space_Sirikata.pbj.hpp>
 #include <util/RoutableMessage.hpp>
+#include <util/KnownServices.hpp>
 namespace Sirikata {
 
 Registration::Registration(const SHA256&privateKey):mPrivateKey(privateKey) {
@@ -56,7 +89,7 @@ void Registration::asyncRegister(const RoutableMessageHeader&header,const Routab
                 destination_header.set_destination_object(header.source_object());
                 destination_header.set_destination_port(header.source_port());
                 destination_header.set_source_object(ObjectReference::spaceServiceID());
-                destination_header.set_source_port(PORT);
+                destination_header.set_source_port(Services::REGISTRATION);
                 retval.add_message_names("RetObj");
                 if (retval.message_arguments_size()==0) {
                     retval.add_message_arguments(std::string());
@@ -80,7 +113,7 @@ void Registration::asyncRegister(const RoutableMessageHeader&header,const Routab
                     RoutableMessageHeader destination_header;
                     destination_header.set_destination_object(ObjectReference(delObj.object_reference()));
                     destination_header.set_source_object(ObjectReference::spaceServiceID());
-                    destination_header.set_source_port(PORT);
+                    destination_header.set_source_port(Services::REGISTRATION);
                     for (std::vector<MessageService*>::iterator i=mServices.begin(),ie=mServices.end();i!=ie;++i) {
                         std::string body_string;
                         body.SerializeToString(&body_string);

@@ -1,7 +1,7 @@
-/*  Sirikata libspace -- Registration Services
- *  Registration.hpp
+/*  Sirikata Object Host -- WebView Listener
+ *  WebViewListener.hpp
  *
- *  Copyright (c) 2009, Daniel Reiter Horn
+ *  Copyright (c) 2009, Adam Jean Simmons
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -30,21 +30,27 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SIRIKATA_ROUTER_HPP_
-#define _SIRIKATA_ROUTER_HPP_
+#ifndef _SIRIKATA_WEBVIEW_LISTENER_HPP_
+#define _SIRIKATA_WEBVIEW_LISTENER_HPP_
 
-#include <space/Platform.hpp>
+#include <string>
+#include "OverlayPosition.hpp"
+
 namespace Sirikata {
 
-class SIRIKATA_SPACE_EXPORT Router : public MessageService {
-    std::vector<MessageService*> mServices;
+class SIRIKATA_OH_EXPORT WebViewListener {
 public:
-	Router(){}
-	~Router(){}
-    void processMessage(const RoutableMessageHeader&header,
-		                MemoryReference message_body){}
-}; // class Space
+    virtual ~WebViewListener() {}
+	virtual void loadURL(const std::string& url) = 0;
+	virtual void loadFile(const std::string& filename) = 0;
+	virtual void loadHTML(const std::string& html) = 0;
+	virtual void evaluateJS(const std::string& javascript) = 0;
+	virtual void setPosition(const OverlayPosition& position) = 0;
+	virtual void hide() = 0;
+	virtual void show() = 0;
+	virtual void resize(int width, int height) = 0;
+};
 
-} // namespace Sirikata
+}
 
-#endif //_SIRIKATA_REGISTRATION_HPP
+#endif

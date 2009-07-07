@@ -41,6 +41,7 @@
 
 namespace Sirikata { namespace Proximity {
 namespace {
+
 void connectionCallback(ProximityConnection* con, Network::Stream::ConnectionStatus status, const std::string&reason) {
     if (status!=Network::Stream::Connected)
         con->streamDisconnected();
@@ -52,15 +53,16 @@ void readProximityMessage(std::tr1::weak_ptr<Network::Stream> mLock,
     std::tr1::shared_ptr<Network::Stream> lok=mLock.lock();//make sure this proximity connection will not disappear;
     if (lok) {
         MessageService*sys=*system;
-        if (sys) {
+        if (sys&&!chunk.empty()) {
             RoutableMessageHeader hdr;
-            MemoryReference body=hdr.ParseFromArray(chunk.data(),chunk.size());
+            MemoryReference body=hdr.ParseFromArray(&chunk[0],chunk.size());
             hdr.set_source_object(object);
             sys->processMessage(hdr,body);
         }
     }
 }
 }
+
 bool SingleStreamProximityConnection::forwardMessagesTo(MessageService*parent) {
     if (mParent!=NULL)
         return false;
