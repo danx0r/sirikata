@@ -79,13 +79,27 @@ SIRIKATA_PLUGIN_EXPORT_C int refcount() {
 }
 
 namespace Sirikata {
+    
+    Task::EventResponse bulletObj::downloadFinished(Task::EventPtr evbase) {
+        Transfer::DownloadEventPtr ev = std::tr1::dynamic_pointer_cast<Transfer::DownloadEvent> (evbase);
+
+        TS_ASSERT_EQUALS(ev->getStatus(), Transfer::TransferManager::SUCCESS);
+
+        notifyOne();
+
+        return Task::EventResponse::del();
+    }
 
 void bulletObj::meshChanged (const URI &newMesh) {
-    DEBUG_OUTPUT(cout << "dbm:    meshlistener: " << newMesh << " URI: " << meshptr->getMesh() << endl;)
+    DEBUG_OUTPUT(cout << "dbm:    meshlistener: " << newMesh << " sysOpt: " << system->systemOptions << endl;)
     meshname = newMesh;
-/*    Meru::GraphicsResourceManager* grm = Meru::GraphicsResourceManager::getSingletonPtr();
-    Meru::SharedResourcePtr newMeshPtr = grm->getResourceAsset(newMesh, Meru::GraphicsResource::MESH);
-    meshresource->setMeshResource(newMeshPtr);*/
+    OptionValue* transferManager = new OptionValue("transfermanager","0", OptionValueType<void*>(),"dummy");
+    OptionValue* workQueue = new OptionValue("workqueue","0",OptionValueType<void*>(),"Memory address of the WorkQueue");
+    OptionValue* eventManager = new OptionValue("eventmanager","0",OptionValueType<void*>(),"Memory address of the EventManager<Event>");
+    InitializeClassOptions("bulletphysics",this,transferManager, workQueue, eventManager, NULL);
+    OptionSet::getOptions("bulletphysics",this)->parse(system->systemOptions);
+    transferManager->download(URI("meerkat:///arcade.mesh"),
+                               std::tr1::bind(&DownloadTest::downloadFinished, this, _1), Range(true));
 }
 
 void bulletObj::setScale (const Vector3f &newScale) {
@@ -100,8 +114,7 @@ void bulletObj::setScale (const Vector3f &newScale) {
 }
 
 void bulletObj::setPhysical (const physicalParameters &pp) {
-    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << (long)this << " mode=" << pp.mode << " mesh: " << meshname 
-            << " URI: " << meshptr->getMesh() << endl;)
+    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << (long)this << " mode=" << pp.mode << " mesh: " << meshname << endl;)
     switch (pp.mode) {
     case Disabled:
         isPhysical = false;
@@ -296,7 +309,9 @@ bool BulletSystem::tick() {
 }
 
 bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, const String&options) {
+    DEBUG_OUTPUT(cout << "dbm: BulletSystem::initialize options: " << options << endl);
     /// HelloWorld from Bullet/Demos
+    systemOptions = options;
     gravity = Vector3d(0, -9.8, 0);
     //groundlevel = 3044.0;
     groundlevel = 4590.0;

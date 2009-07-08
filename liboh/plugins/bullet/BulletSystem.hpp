@@ -88,7 +88,8 @@ public:
     void setBulletState(positionOrientation pq);
     ProxyMeshObjectPtr meshptr;
     URI meshname;
-    std::tr1::shared_ptr<Meru::GraphicsResourceEntity>  meshresource;
+//    std::tr1::shared_ptr<Meru::GraphicsResourceEntity>  meshresource;
+    Task::EventResponse downloadFinished(Task::EventPtr evbase);
 };
 
 class BulletSystem: public TimeSteppedSimulation {
@@ -109,6 +110,7 @@ class BulletSystem: public TimeSteppedSimulation {
 
 public:
     BulletSystem();
+    string systemOptions;
     btRigidBody* addPhysicalObject(bulletObj* obj,positionOrientation pq,  bool dynamic,
                                    float density, float friction, float bounce,
                                    float sizx, float sizy, float sizz);
