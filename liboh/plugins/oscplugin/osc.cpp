@@ -24,6 +24,9 @@ void getIPAddress (int index){
 
 void sendOSCmessage(ball_coordinates currentClient)
 {
+    std::cout << "ccrma: coordinates sent from Sirikata: x=" << currentClient.ball_x << ", " <<
+            currentClient.ball_y << ", " << currentClient.ball_z << std::endl;
+    if (!currentClient.port) return;          /// port & stuff not initialized
 std::string str(currentClient.port);
 std::istringstream strin(str);
 int port;

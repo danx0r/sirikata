@@ -248,8 +248,12 @@ bool BulletSystem::tick() {
                 Vector3f size = physicalObjects[i]->meshptr->getScale();
                 if (size.x==1 && size.y==1 && size.z==1) {
                     Vector3d position = physicalObjects[i]->meshptr->getPosition();
-                    DEBUG_OUTPUT(cout << "ccrma: sphere of radius 1 moved to: " << position.x << ", " << position.y << ", " << position.z << endl);
-                    oscplugin::getIPAddress(1);
+                    DEBUG_OUTPUT(cout << "ccrma: sphere moved to: " << position.x << ", " << position.y << ", " << position.z << endl);
+                    oscplugin::ball_coordinates coords;
+                    coords.ball_x = (float)position.x;
+                    coords.ball_y = (float)position.y;
+                    coords.ball_z = (float)position.z;
+                    oscplugin::sendOSCmessage(coords);
                 }
             }
             //dynamicsWorld->stepSimulation(delta,0);
