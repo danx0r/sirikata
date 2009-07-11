@@ -338,6 +338,9 @@ class BulletSystem: public TimeSteppedSimulation {
     btCollisionDispatcher* dispatcher;
     btAxisSweep3* overlappingPairCache;
     btSequentialImpulseConstraintSolver* solver;
+    
+    /// ccrma hack:
+    Vector3d oldpos;
 
 public:
     BulletSystem();

@@ -176,8 +176,8 @@ void bulletObj::setScale (const Vector3f &newScale) {
     bulletBodyPtr->setMassProps(mass, localInertia);
     bulletBodyPtr->setGravity(btVector3(0, -9.8, 0));                              /// otherwise gravity assumes old inertia!
     bulletBodyPtr->activate(true);
-    DEBUG_OUTPUT(cout << "dbm: setScale " << newScale << " old X: " << sizeX << " mass: " 
-            << mass << " localInertia: " << localInertia.getX() << "," << localInertia.getY() << "," << localInertia.getZ() << endl);
+    DEBUG_OUTPUT(cout << "dbm: setScale " << newScale << " old X: " << sizeX << " mass: "
+                 << mass << " localInertia: " << localInertia.getX() << "," << localInertia.getY() << "," << localInertia.getZ() << endl);
 }
 
 btCollisionShape* bulletObj::buildBulletShape(const unsigned char* meshdata, int meshbytes, float &mass) {
@@ -222,7 +222,7 @@ btCollisionShape* bulletObj::buildBulletShape(const unsigned char* meshdata, int
         for (i=0; i<indices.size(); i++) {
             DEBUG_OUTPUT (cout << " " << indices[i]);
         }
-            DEBUG_OUTPUT (cout << endl);
+        DEBUG_OUTPUT (cout << endl);
         DEBUG_OUTPUT (cout << "dbm:mesh bounds:");
         for (i=0; i<bounds.size(); i++) {
             DEBUG_OUTPUT (cout << " " << bounds[i]);
@@ -366,12 +366,15 @@ bool BulletSystem::tick() {
                 Vector3f size = physicalObjects[i]->meshptr->getScale();
                 if (size.x==1 && size.y==1 && size.z==1) {
                     Vector3d position = physicalObjects[i]->meshptr->getPosition();
-                    DEBUG_OUTPUT(cout << "ccrma: sphere moved to: " << position.x << ", " << position.y << ", " << position.z << endl);
-                    oscplugin::ball_coordinates coords;
-                    coords.ball_x = (float)position.x;
-                    coords.ball_y = (float)position.y;
-                    coords.ball_z = (float)position.z;
-                    oscplugin::sendOSCmessage(coords);
+                    if (abs(position.x-oldpos.x)>0.01 || abs(position.y-oldpos.y)>0.01 || abs(position.z-oldpos.z)>0.01) {
+                        oldpos = position;
+                        DEBUG_OUTPUT(cout << "ccrma: sphere moved to: " << position.x << ", " << position.y << ", " << position.z << endl);
+                        oscplugin::ball_coordinates coords;
+                        coords.ball_x = (float)position.x;
+                        coords.ball_y = (float)position.y;
+                        coords.ball_z = (float)position.z;
+                        oscplugin::sendOSCmessage(coords);
+                    }
                 }
             }
             //dynamicsWorld->stepSimulation(delta,0);
