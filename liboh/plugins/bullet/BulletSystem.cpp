@@ -43,8 +43,8 @@ using namespace std;
 using std::tr1::placeholders::_1;
 static int core_plugin_refcount = 0;
 
-#define DEBUG_OUTPUT(x) x
-//#define DEBUG_OUTPUT(x)
+//#define DEBUG_OUTPUT(x) x
+#define DEBUG_OUTPUT(x)
 
 SIRIKATA_PLUGIN_EXPORT_C void init() {
     using namespace Sirikata;
@@ -342,6 +342,8 @@ void BulletSystem::removePhysicalObject(bulletObj* obj) {
     }
 }
 
+Task::AbsTime bugtimestart=Task::AbsTime::now();
+
 bool BulletSystem::tick() {
     static Task::AbsTime starttime = Task::AbsTime::now();
     static Task::AbsTime lasttime = starttime;
@@ -388,6 +390,22 @@ bool BulletSystem::tick() {
     DEBUG_OUTPUT(cout << endl;)
     return 0;
 }
+class customDispatch :public btCollisionDispatcher {
+public:
+    customDispatch(btCollisionConfiguration* collisionConfiguration) :
+            btCollisionDispatcher(collisionConfiguration) {
+    }
+    bool needsCollision(btCollisionObject* body0,btCollisionObject* body1) {
+        cout << "dbm debug: needs collision, time: " << (Task::AbsTime::now()-bugtimestart).toSeconds()
+        << " 0:" << body0 << " 1:" << body1 << endl;
+        return btCollisionDispatcher::needsCollision(body0, body1);
+    }
+    bool needsResponse(btCollisionObject* body0,btCollisionObject* body1) {
+        cout << "dbm debug: needs RESPONSE, time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() 
+                << " 0:" << body0 << " 1:" << body1 << endl;
+        return btCollisionDispatcher::needsResponse(body0, body1);
+    }
+};
 
 bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, const String&options) {
     DEBUG_OUTPUT(cout << "dbm: BulletSystem::initialize options: " << options << endl);
@@ -412,7 +430,8 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
 
     /// set up bullet stuff
     collisionConfiguration = new btDefaultCollisionConfiguration();
-    dispatcher = new btCollisionDispatcher(collisionConfiguration);
+    //dispatcher = new btCollisionDispatcher(collisionConfiguration);
+    dispatcher = new customDispatch(collisionConfiguration);
     overlappingPairCache= new btAxisSweep3(worldAabbMin,worldAabbMax,maxProxies);
     solver = new btSequentialImpulseConstraintSolver;
     dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);

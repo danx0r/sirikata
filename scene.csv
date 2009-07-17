@@ -1,7 +1,7 @@
-objtype,subtype,pos_x,pos_y,pos_z,orient_x,orient_y,orient_z,orient_w,scale_x,scale_y,scale_z,density,friction,bounce,meshURI,diffuse_x,diffuse_y,diffuse_z,ambient,specular_x,specular_y,specular_z,shadowpower,range,constantfall,linearfall,quadfall,cone_in,cone_out,power,cone_fall,shadow
-mesh,dynamicsphere,0.100000,10.000000,0.000000,0.000000,0.000000,0.000000,,0.500000,0.500000,0.500000,1.000000,0.500000,0.700000,meru://daniel@/sphere.mesh
-mesh,dynamicbox,0.000000,0.500000,0.400000,0.000000,0.010000,0.000000,,0.600000,1.000000,0.200000,1.000000,0.200000,0.700000,meru://daniel@/cube.mesh
-mesh,staticmesh,0.000000,0.000000,-5.000000,33.000001,43.999998,54.999998,,2.000000,2.000000,2.000000,0.000000,1.000000,0.600000,meru://daniel@/cube.mesh
-light,directional,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,,,,,,,,,1.000000,1.000000,1.000000,0.000000,0.000000,0.000000,0.000000,nan,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0
-camera,,-21.828112,4.000000,1.350120,0.000000,-86.860004,0.000000,
-mesh,graphiconly,0.000000,3.000000,0.000000,-11.000000,-0.000000,33.000003,,2.000000,1.000000,4.000000,0.000000,0.000000,0.000000,meru://daniel@/cube.mesh
+"objtype","subtype","pos_x","pos_y","pos_z","orient_x","orient_y","orient_z","orient_w","scale_x","scale_y","scale_z","density","friction","bounce","meshURI","diffuse_x","diffuse_y","diffuse_z","ambient","specular_x","specular_y","specular_z","shadowpower","range","constantfall","linearfall","quadfall","cone_in","cone_out","power","cone_fall","shadow"
+"mesh","dynamicsphere",0.1,15,0,0,0,0,,0.5,0.5,0.5,1,0.5,0.9,"meru://daniel@/sphere.mesh",,,,,,,,,,,,,,,,,
+"mesh","staticmesh",0,0.5,0.4,0,0.01,0,,2,3,4,1,0.2,0.8,"meru://daniel@/cube.mesh",,,,,,,,,,,,,,,,,
+"#mesh","staticmesh",0,0,-5,33,44,55,,2,2,2,0,1,0.6,"meru://daniel@/cube.mesh",,,,,,,,,,,,,,,,,
+"light","directional",0,0,0,0,0,0,,,,,,,,,1,1,1,0,0,0,0,"nan",0,0,0,0,0,0,0,0,0
+"camera",,-21.83,4,1.35,0,-86.86,0,,,,,,,,,,,,,,,,,,,,,,,,,
+"#mesh","graphiconly",0,3,0,-11,0,33,,2,1,4,0,0,0,"meru://daniel@/cube.mesh",,,,,,,,,,,,,,,,,
