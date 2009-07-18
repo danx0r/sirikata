@@ -43,8 +43,8 @@ using namespace std;
 using std::tr1::placeholders::_1;
 static int core_plugin_refcount = 0;
 
-//#define DEBUG_OUTPUT(x) x
-#define DEBUG_OUTPUT(x)
+#define DEBUG_OUTPUT(x) x
+//#define DEBUG_OUTPUT(x)
 
 SIRIKATA_PLUGIN_EXPORT_C void init() {
     using namespace Sirikata;
@@ -346,7 +346,8 @@ void BulletSystem::removePhysicalObject(bulletObj* obj) {
 }
 
 bool BulletSystem::tick() {
-    static Task::AbsTime starttime = Task::AbsTime::now();
+    //static Task::AbsTime starttime = Task::AbsTime::now();
+    static Task::AbsTime starttime = bugtimestart;
     static Task::AbsTime lasttime = starttime;
     static Task::DeltaTime waittime = Task::DeltaTime::seconds(0.02);
     static int mode = 0;
@@ -364,7 +365,7 @@ bool BulletSystem::tick() {
                 if (objects[i]->active) {
                     if (objects[i]->meshptr->getPosition() != objects[i]->getBulletState().p) {
                         /// if object has been moved, reset bullet position accordingly
-                        DEBUG_OUTPUT(cout << "    dbm: item, " << i << " moved by user!"
+                        DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->name << " moved by user!"
                                      << " meshpos: " << objects[i]->meshptr->getPosition()
                                      << " bulletpos before reset: " << objects[i]->getBulletState().p;)
                         objects[i]->setBulletState(
@@ -380,7 +381,7 @@ bool BulletSystem::tick() {
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->active) {
                     po = objects[i]->getBulletState();
-                    DEBUG_OUTPUT(cout << "    dbm: item, " << i << ", delta, " << delta.toSeconds() << ", newpos, " << po.p
+                    DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->name << ", delta, " << delta.toSeconds() << ", newpos, " << po.p
                                  << "obj: " << objects[i] << endl;)
                     objects[i]->meshptr->setPosition(now, po.p, po.o);
                 }
@@ -406,7 +407,6 @@ bool BulletSystem::tick() {
                 }
                 else if (i->second==3) {        /// re-flagged, so still colliding. clear flag
                     dispatcher->collisionPairs[i->first]=2;
-                    break;
                 }
             }
         }
