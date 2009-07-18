@@ -93,6 +93,7 @@ void bulletObj::meshChanged (const URI &newMesh) {
 void bulletObj::setPhysical (const physicalParameters &pp) {
     DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl);
     this->name = pp.name;
+    this->collision = pp.collision;
     switch (pp.mode) {
     case Disabled:
         DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: Disabled" << endl);
@@ -376,7 +377,6 @@ bool BulletSystem::tick() {
                     }
                 }
             }
-            //dynamicsWorld->stepSimulation(delta,0);
             dynamicsWorld->stepSimulation(delta,10);
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->active) {
@@ -386,25 +386,26 @@ bool BulletSystem::tick() {
                     objects[i]->meshptr->setPosition(now, po.p, po.o);
                 }
             }
+            
+            /// collision messages
             for (map<set<btCollisionObject*>, int>::iterator i=dispatcher->collisionPairs.begin();
                     i != dispatcher->collisionPairs.end(); ++i) {
                 set<btCollisionObject*>::iterator j=i->first.begin() ;
                 btCollisionObject* b0=*j;
                 ++j;
                 btCollisionObject* b1=*j;
-                if (i->second==1) {
+                if (i->second==1) {             /// recently colliding; send msg & change mode
                     cout << "  dbm debug collision begins at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
                     << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
                     dispatcher->collisionPairs[i->first]=2;
                 }
-                else if (i->second==2) {
-//                    dispatcher->collisionPairs[i->first]=0;
+                else if (i->second==2) {        /// didn't get flagged again; collision now over
                     cout << "  dbm debug collision ends at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
                     << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
                     dispatcher->collisionPairs.erase(i);
                     if (i==dispatcher->collisionPairs.end()) break;
                 }
-                else if (i->second==3) {
+                else if (i->second==3) {        /// re-flagged, so still colliding. clear flag
                     dispatcher->collisionPairs[i->first]=2;
                     break;
                 }

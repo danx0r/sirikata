@@ -315,6 +315,7 @@ public:
     float sizeY;
     float sizeZ;
     string name;
+    int collision;
 
     /// public methods
     bulletObj(BulletSystem* sys) :
@@ -344,12 +345,7 @@ Task::AbsTime bugtimestart=Task::AbsTime::now();
 
 class customDispatch :public btCollisionDispatcher {
     map<btCollisionObject*, bulletObj*>* bt2siri;
-    /// here's some tweaky logic.  If pairs=0, then this is a new collision; send a msg
-    /// always add 1
-    /// later, ::tick sweeps through and changes 1 to 2
-    /// next pass here changes 2 to 3
-    /// if ::tick sees a 2, it deletes it (end collision)
-    /// if ::tick sees a 3, make it a 2 again
+    /// the entire point of this subclass is to flag collisions in collisionPairs
 public:
     map<set<btCollisionObject*>, int> collisionPairs;
     customDispatch(btCollisionConfiguration* collisionConfiguration,
@@ -362,10 +358,12 @@ public:
         bulletObj* siri0 = bt2siri[0][body0];
         bulletObj* siri1 = bt2siri[0][body1];
         if (siri0 && siri1) {
-            set<btCollisionObject*> temp;
-            temp.insert(body0);
-            temp.insert(body1);
-            collisionPairs[temp] |= 1;
+            if (siri0->collision & siri1->collision) {
+                set<btCollisionObject*> temp;
+                temp.insert(body0);
+                temp.insert(body1);
+                collisionPairs[temp] |= 1;
+            }
         }
         return collision;
     }

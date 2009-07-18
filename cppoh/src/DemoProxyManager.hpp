@@ -55,7 +55,7 @@ class DemoProxyManager :public ProxyManager {
     ProxyObjectPtr addMeshObject(const Transfer::URI &uri, const Location &location,
                                  const Vector3f &scale=Vector3f(1,1,1),
                                  const int mode=0, const float density=0.f, const float friction=0.f, 
-                                 const float bounce=0.f, const string name="") {
+                                 const float bounce=0.f, const string name="", const int collision=0) {
         // parentheses around arguments required to resolve function/constructor ambiguity. This is ugly.
         SpaceObjectReference myId((SpaceID(UUID::null())),(ObjectReference(UUID::random())));
         //std::cout << "Add Mesh Object " << myId << " = " << uri << " mode: " << mode << std::endl;
@@ -71,6 +71,7 @@ class DemoProxyManager :public ProxyManager {
         pp.friction = friction;
         pp.bounce = bounce;
         pp.name = name;
+        pp.collision = collision;
         myObj->setPhysical(pp);             /// always do this to ensure parameters are valid
         return myObj;
     }
@@ -304,8 +305,8 @@ class DemoProxyManager :public ProxyManager {
                     assert(false);
                 }
                 string name = row["name"];
-                addMeshObject(Transfer::URI(meshURI), location, scale, mode, density, friction, bounce, name);
-                //cout << "csv: added mesh to scene.  subtype: " << row["subtype"] << " mode: " << mode << " density: " << density << endl;
+                int collision = str2int(row["collision"]);
+                addMeshObject(Transfer::URI(meshURI), location, scale, mode, density, friction, bounce, name, collision);
             }
             else {
                 cout << "parse csv error: illegal object type" << endl;
