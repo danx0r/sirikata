@@ -347,7 +347,7 @@ class customDispatch :public btCollisionDispatcher {
     /// the entire point of this subclass is to flag collisions in collisionPairs
 public:
     map<btCollisionObject*, bulletObj*>* bt2siri;
-    map<set<btCollisionObject*>, int> collisionPairs;
+    map<set<bulletObj*>, int> collisionPairs;
     customDispatch (btCollisionConfiguration* collisionConfiguration,
                     map<btCollisionObject*, bulletObj*>* bt2siri) :
             btCollisionDispatcher(collisionConfiguration) {

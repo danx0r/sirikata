@@ -388,20 +388,20 @@ bool BulletSystem::tick() {
             }
 
             /// collision messages
-            for (map<set<btCollisionObject*>, int>::iterator i=dispatcher->collisionPairs.begin();
+            for (map<set<bulletObj*>, int>::iterator i=dispatcher->collisionPairs.begin();
                     i != dispatcher->collisionPairs.end(); ++i) {
-                set<btCollisionObject*>::iterator j=i->first.begin() ;
-                btCollisionObject* b0=*j;
+                set<bulletObj*>::iterator j=i->first.begin() ;
+                bulletObj* b0=*j;
                 ++j;
-                btCollisionObject* b1=*j;
+                bulletObj* b1=*j;
                 if (i->second==1) {             /// recently colliding; send msg & change mode
                     cout << "  dbm debug collision begins at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
-                    << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
+                    << b0->name << " and " << b1->name << endl;
                     dispatcher->collisionPairs[i->first]=2;
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
                     cout << "  dbm debug collision ends at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
-                    << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
+                    << b0->name << " and " << b1->name << endl;
                     dispatcher->collisionPairs.erase(i);
                     if (i==dispatcher->collisionPairs.end()) break;
                 }
@@ -448,9 +448,9 @@ void customNearCallback(btBroadphasePair& collisionPair, btCollisionDispatcher& 
                 bulletObj* siri1 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj1];
                 if (siri0 && siri1) {
                     if (siri0->collision & siri1->collision) {
-                        set<btCollisionObject*> temp;
-                        temp.insert(colObj0);
-                        temp.insert(colObj1);
+                        set<bulletObj*> temp;
+                        temp.insert(siri0);
+                        temp.insert(siri1);
                         ((customDispatch*)(&dispatcher))->collisionPairs[temp] |= 1;
                     }
                 }
