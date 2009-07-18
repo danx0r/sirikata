@@ -344,15 +344,17 @@ public:
 Task::AbsTime bugtimestart=Task::AbsTime::now();
 
 class customDispatch :public btCollisionDispatcher {
-    map<btCollisionObject*, bulletObj*>* bt2siri;
     /// the entire point of this subclass is to flag collisions in collisionPairs
 public:
+    map<btCollisionObject*, bulletObj*>* bt2siri;
     map<set<btCollisionObject*>, int> collisionPairs;
     customDispatch (btCollisionConfiguration* collisionConfiguration,
                     map<btCollisionObject*, bulletObj*>* bt2siri) :
             btCollisionDispatcher(collisionConfiguration) {
         this->bt2siri=bt2siri;
     }
+    
+    /*
     bool needsResponse(btCollisionObject* body0,btCollisionObject* body1) {
         bool collision = btCollisionDispatcher::needsResponse(body0, body1);
         if (collision) {
@@ -369,6 +371,7 @@ public:
         }
         return collision;
     }
+    */
 };
 
 class BulletSystem: public TimeSteppedSimulation {
