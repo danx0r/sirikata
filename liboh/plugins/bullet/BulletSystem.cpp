@@ -391,8 +391,7 @@ bool BulletSystem::tick() {
             for (map<set<bulletObj*>, int>::iterator i=dispatcher->collisionPairs.begin();
                     i != dispatcher->collisionPairs.end(); ++i) {
                 set<bulletObj*>::iterator j=i->first.begin() ;
-                bulletObj* b0=*j;
-                ++j;
+                bulletObj* b0=*j++;
                 bulletObj* b1=*j;
                 if (i->second==1) {             /// recently colliding; send msg & change mode
                     cout << "  dbm debug collision begins at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
