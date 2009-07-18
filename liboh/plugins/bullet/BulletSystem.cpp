@@ -43,8 +43,8 @@ using namespace std;
 using std::tr1::placeholders::_1;
 static int core_plugin_refcount = 0;
 
-//#define DEBUG_OUTPUT(x) x
-#define DEBUG_OUTPUT(x)
+#define DEBUG_OUTPUT(x) x
+//#define DEBUG_OUTPUT(x)
 
 SIRIKATA_PLUGIN_EXPORT_C void init() {
     using namespace Sirikata;
@@ -94,7 +94,6 @@ void bulletObj::setPhysical (const physicalParameters &pp) {
     DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl;)
     switch (pp.mode) {
     case Disabled:
-        cout << "  dbm: debug setPhysical: Disabled" << endl;
         active = false;
         dynamic = false;
         break;
@@ -112,7 +111,6 @@ void bulletObj::setPhysical (const physicalParameters &pp) {
         break;
     }
     if (!(pp.mode==Disabled)) {
-        cout << "  dbm: debug setPhysical: adding to bullet" << endl;
         positionOrientation po;
         po.p = meshptr->getPosition();
         po.o = meshptr->getOrientation();
@@ -279,7 +277,9 @@ void bulletObj::buildBulletBody(const unsigned char* meshdata, int meshbytes) {
     }
     system->dynamicsWorld->addRigidBody(body);
     bulletBodyPtr=body;
+    cout << "dbm debug: body: " << body << endl;
     active=true;
+    system->bt2siri[body]=this;
 }
 
 Task::EventResponse BulletSystem::downloadFinished(Task::EventPtr evbase, bulletObj* bullobj) {
@@ -390,20 +390,34 @@ bool BulletSystem::tick() {
     DEBUG_OUTPUT(cout << endl;)
     return 0;
 }
+
 class customDispatch :public btCollisionDispatcher {
+    map<btCollisionObject*, bulletObj*>* bt2siri;
+    set<set<btCollisionObject*> > collisionPairs;       /// use set as key because order is irrelevant
 public:
-    customDispatch(btCollisionConfiguration* collisionConfiguration) :
+    customDispatch(btCollisionConfiguration* collisionConfiguration,
+                   map<btCollisionObject*, bulletObj*>* bt2siri) :
             btCollisionDispatcher(collisionConfiguration) {
+        this->bt2siri=bt2siri;
     }
     bool needsCollision(btCollisionObject* body0,btCollisionObject* body1) {
-        cout << "dbm debug: needs collision, time: " << (Task::AbsTime::now()-bugtimestart).toSeconds()
-        << " 0:" << body0 << " 1:" << body1 << endl;
-        return btCollisionDispatcher::needsCollision(body0, body1);
-    }
-    bool needsResponse(btCollisionObject* body0,btCollisionObject* body1) {
-        cout << "dbm debug: needs RESPONSE, time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() 
-                << " 0:" << body0 << " 1:" << body1 << endl;
-        return btCollisionDispatcher::needsResponse(body0, body1);
+        bool collision = btCollisionDispatcher::needsCollision(body0, body1);
+        set<btCollisionObject*> temp;
+        temp.insert(body0);
+        temp.insert(body1);
+        if (collisionPairs.count(temp)>0) {
+            cout << "dbm debug: this pair already in set" << endl;
+        }
+        else {
+            collisionPairs.insert(temp);
+            bulletObj* siri0;
+            bulletObj* siri1;
+            siri0 = bt2siri[0][body0];
+            siri1 = bt2siri[0][body1];
+            cout << "dbm debug: new collision: " << collision << " time: " << (Task::AbsTime::now()-bugtimestart).toSeconds()
+            << " 0:" << siri0 << " 1:" << siri1 << endl;
+        }
+        return collision;
     }
 };
 
@@ -431,7 +445,7 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     /// set up bullet stuff
     collisionConfiguration = new btDefaultCollisionConfiguration();
     //dispatcher = new btCollisionDispatcher(collisionConfiguration);
-    dispatcher = new customDispatch(collisionConfiguration);
+    dispatcher = new customDispatch(collisionConfiguration, &bt2siri);
     overlappingPairCache= new btAxisSweep3(worldAabbMin,worldAabbMax,maxProxies);
     solver = new btSequentialImpulseConstraintSolver;
     dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
@@ -448,7 +462,7 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     groundBody = new btRigidBody(rbInfo);
     groundBody->setRestitution(0.5);                 /// bouncy for fun & profit
     dynamicsWorld->addRigidBody(groundBody);
-
+    cout << "dbm debug: groundBody: " << groundBody << endl;
     proxyManager->addListener(this);
     DEBUG_OUTPUT(cout << "dbm: BulletSystem::initialized, including test bullet object" << endl);
     /// we don't delete these, the ProxyManager does (I think -- someone does anyway)

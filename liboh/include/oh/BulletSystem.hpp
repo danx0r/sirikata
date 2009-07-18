@@ -256,7 +256,6 @@ public:
 
 
 typedef tr1::shared_ptr<ProxyMeshObject> ProxyMeshObjectPtr;
-//vector<ProxyMeshObjectPtr>mymesh;
 
 struct positionOrientation {
     Vector3d p;
@@ -358,6 +357,7 @@ class BulletSystem: public TimeSteppedSimulation {
 
 public:
     BulletSystem();
+    map<btCollisionObject*, bulletObj*> bt2siri;  /// map bullet bodies (what we get in the callbacks) to bulletObj's
     btDiscreteDynamicsWorld* dynamicsWorld;
     vector<bulletObj*>objects;
 //    btAlignedObjectArray<btCollisionShape*> collisionShapes;
