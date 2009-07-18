@@ -386,7 +386,7 @@ bool BulletSystem::tick() {
                     objects[i]->meshptr->setPosition(now, po.p, po.o);
                 }
             }
-            
+
             /// collision messages
             for (map<set<btCollisionObject*>, int>::iterator i=dispatcher->collisionPairs.begin();
                     i != dispatcher->collisionPairs.end(); ++i) {
@@ -415,6 +415,37 @@ bool BulletSystem::tick() {
     return 0;
 }
 
+void customNearCallback(btBroadphasePair& collisionPair, btCollisionDispatcher& dispatcher, const btDispatcherInfo& dispatchInfo) {
+    // Do your collision logic here
+    // Only dispatch the Bullet collision information if you want the physics to continue
+    btCollisionObject* colObj0 = (btCollisionObject*)collisionPair.m_pProxy0->m_clientObject;
+    btCollisionObject* colObj1 = (btCollisionObject*)collisionPair.m_pProxy1->m_clientObject;
+
+    if (dispatcher.needsCollision(colObj0,colObj1)) {
+        //dispatcher will keep algorithms persistent in the collision pair
+        if (!collisionPair.m_algorithm) {
+            collisionPair.m_algorithm = dispatcher.findAlgorithm(colObj0,colObj1);
+        }
+
+        if (collisionPair.m_algorithm) {
+            btManifoldResult contactPointResult(colObj0,colObj1);
+
+            if (dispatchInfo.m_dispatchFunc ==      btDispatcherInfo::DISPATCH_DISCRETE) {
+                //discrete collision detection query
+                collisionPair.m_algorithm->processCollision(colObj0,colObj1,dispatchInfo,&contactPointResult);
+            }
+            else {
+                //continuous collision detection query, time of impact (toi)
+                btScalar toi = collisionPair.m_algorithm->calculateTimeOfImpact(colObj0,colObj1,dispatchInfo,&contactPointResult);
+                if (dispatchInfo.m_timeOfImpact > toi)
+                    dispatchInfo.m_timeOfImpact = toi;
+
+            }
+            cout << "dbm debug: customNearCallback, contact count:" << contactPointResult.getPersistentManifold()->getNumContacts() << endl;
+        }
+    }
+}
+
 bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, const String&options) {
     DEBUG_OUTPUT(cout << "dbm: BulletSystem::initialize options: " << options << endl);
     /// HelloWorld from Bullet/Demos
@@ -440,6 +471,7 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     collisionConfiguration = new btDefaultCollisionConfiguration();
     //dispatcher = new btCollisionDispatcher(collisionConfiguration);
     dispatcher = new customDispatch(collisionConfiguration, &bt2siri);
+    dispatcher->setNearCallback(customNearCallback);
     overlappingPairCache= new btAxisSweep3(worldAabbMin,worldAabbMax,maxProxies);
     solver = new btSequentialImpulseConstraintSolver;
     dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);

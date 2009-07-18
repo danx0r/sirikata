@@ -348,21 +348,23 @@ class customDispatch :public btCollisionDispatcher {
     /// the entire point of this subclass is to flag collisions in collisionPairs
 public:
     map<set<btCollisionObject*>, int> collisionPairs;
-    customDispatch(btCollisionConfiguration* collisionConfiguration,
-                   map<btCollisionObject*, bulletObj*>* bt2siri) :
+    customDispatch (btCollisionConfiguration* collisionConfiguration,
+                    map<btCollisionObject*, bulletObj*>* bt2siri) :
             btCollisionDispatcher(collisionConfiguration) {
         this->bt2siri=bt2siri;
     }
-    bool needsCollision(btCollisionObject* body0,btCollisionObject* body1) {
-        bool collision = btCollisionDispatcher::needsCollision(body0, body1);
-        bulletObj* siri0 = bt2siri[0][body0];
-        bulletObj* siri1 = bt2siri[0][body1];
-        if (siri0 && siri1) {
-            if (siri0->collision & siri1->collision) {
-                set<btCollisionObject*> temp;
-                temp.insert(body0);
-                temp.insert(body1);
-                collisionPairs[temp] |= 1;
+    bool needsResponse(btCollisionObject* body0,btCollisionObject* body1) {
+        bool collision = btCollisionDispatcher::needsResponse(body0, body1);
+        if (collision) {
+            bulletObj* siri0 = bt2siri[0][body0];
+            bulletObj* siri1 = bt2siri[0][body1];
+            if (siri0 && siri1) {
+                if (siri0->collision & siri1->collision) {
+                    set<btCollisionObject*> temp;
+                    temp.insert(body0);
+                    temp.insert(body1);
+                    collisionPairs[temp] |= 1;
+                }
             }
         }
         return collision;
