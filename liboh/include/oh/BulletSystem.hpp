@@ -314,6 +314,7 @@ public:
     float sizeX;
     float sizeY;
     float sizeZ;
+    string name;
 
     /// public methods
     bulletObj(BulletSystem* sys) :
@@ -327,7 +328,8 @@ public:
             colShape(NULL),
             sizeX(0),
             sizeY(0),
-            sizeZ(0) {
+            sizeZ(0),
+            name("") {
         system = sys;
         indexarray=0;
     }

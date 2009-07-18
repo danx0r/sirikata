@@ -91,7 +91,8 @@ void bulletObj::meshChanged (const URI &newMesh) {
 }
 
 void bulletObj::setPhysical (const physicalParameters &pp) {
-    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl;)
+    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl);
+    this->name = pp.name;
     switch (pp.mode) {
     case Disabled:
         DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: Disabled" << endl);
@@ -404,20 +405,20 @@ public:
     }
     bool needsCollision(btCollisionObject* body0,btCollisionObject* body1) {
         bool collision = btCollisionDispatcher::needsCollision(body0, body1);
-        set<btCollisionObject*> temp;
-        temp.insert(body0);
-        temp.insert(body1);
-        if (collisionPairs.count(temp)>0) {
-            cout << "dbm debug: this pair already in set" << endl;
-        }
-        else {
-            collisionPairs.insert(temp);
-            bulletObj* siri0;
-            bulletObj* siri1;
-            siri0 = bt2siri[0][body0];
-            siri1 = bt2siri[0][body1];
-            cout << "dbm debug: new collision: " << collision << " time: " << (Task::AbsTime::now()-bugtimestart).toSeconds()
-            << " 0:" << siri0 << " 1:" << siri1 << endl;
+        bulletObj* siri0 = bt2siri[0][body0];
+        bulletObj* siri1 = bt2siri[0][body1];
+        if (siri0 && siri1) {
+            set<btCollisionObject*> temp;
+            temp.insert(body0);
+            temp.insert(body1);
+            if (collisionPairs.count(temp)>0) {
+//            cout << "dbm debug: this pair already in set" << endl;
+            }
+            else {
+                collisionPairs.insert(temp);
+                cout << "dbm debug: new collision: " << collision << " @time: " << (Task::AbsTime::now()-bugtimestart).toSeconds()
+                << " " << siri0->name << " starts colliding with " << siri1->name << endl;
+            }
         }
         return collision;
     }

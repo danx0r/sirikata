@@ -39,6 +39,7 @@ namespace Sirikata {
 using Transfer::URI;
 
 struct physicalParameters {
+    std::string name;
     int mode;
     float density;
     float friction;
