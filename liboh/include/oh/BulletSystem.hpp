@@ -350,37 +350,25 @@ class customDispatch :public btCollisionDispatcher {
     /// next pass here changes 2 to 3
     /// if ::tick sees a 2, it deletes it (end collision)
     /// if ::tick sees a 3, make it a 2 again
-    public:
-        map<set<btCollisionObject*>, int> collisionPairs;
-        customDispatch(btCollisionConfiguration* collisionConfiguration,
+public:
+    map<set<btCollisionObject*>, int> collisionPairs;
+    customDispatch(btCollisionConfiguration* collisionConfiguration,
                    map<btCollisionObject*, bulletObj*>* bt2siri) :
-                btCollisionDispatcher(collisionConfiguration) {
-            this->bt2siri=bt2siri;
-                }
-                bool needsCollision(btCollisionObject* body0,btCollisionObject* body1) {
-                    bool collision = btCollisionDispatcher::needsCollision(body0, body1);
-                    bulletObj* siri0 = bt2siri[0][body0];
-                    bulletObj* siri1 = bt2siri[0][body1];
-                    if (siri0 && siri1) {
-                        set<btCollisionObject*> temp;
-                        temp.insert(body0);
-                        temp.insert(body1);
-                        if (collisionPairs[temp]>0) {
-                            //cout << "dbm debug: this pair already in map, #=" << collisionPairs[temp] 
-                            //        << " " << siri0->name << ":" << siri1->name << endl;
-                            if (collisionPairs[temp] == 2) {
-                                collisionPairs[temp]++;
-                            }
-                        }
-                        else {
-                            //cout << "dbm debug: new collision: " << collision << " @time: " 
-                              //      << (Task::AbsTime::now()-bugtimestart).toSeconds()
-                                //    << " " << siri0->name << " starts colliding with " << siri1->name << endl;
-                            collisionPairs[temp]++;
-                        }
-                    }
-                    return collision;
-                }
+            btCollisionDispatcher(collisionConfiguration) {
+        this->bt2siri=bt2siri;
+    }
+    bool needsCollision(btCollisionObject* body0,btCollisionObject* body1) {
+        bool collision = btCollisionDispatcher::needsCollision(body0, body1);
+        bulletObj* siri0 = bt2siri[0][body0];
+        bulletObj* siri1 = bt2siri[0][body1];
+        if (siri0 && siri1) {
+            set<btCollisionObject*> temp;
+            temp.insert(body0);
+            temp.insert(body1);
+            collisionPairs[temp] |= 1;
+        }
+        return collision;
+    }
 };
 
 class BulletSystem: public TimeSteppedSimulation {

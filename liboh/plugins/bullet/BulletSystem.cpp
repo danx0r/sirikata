@@ -392,25 +392,20 @@ bool BulletSystem::tick() {
                 btCollisionObject* b0=*j;
                 ++j;
                 btCollisionObject* b1=*j;
-                //cout << "dbm debug tick: " << i->second << endl;
                 switch (i->second) {
                 case 1:
                     dispatcher->collisionPairs[i->first]=2;
-                    cout << "  dbm debug collision begins for " << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
+                    cout << "  dbm debug collision begins at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
+                    << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
                     break;
-                case 2: {
+                case 2:
                     dispatcher->collisionPairs[i->first]=0;
-                    cout << "  dbm debug collision ends for " << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
+                    cout << "  dbm debug collision ends at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
+                    << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
                     break;
-//                    dispatcher->collisionPairs.erase(i);
-                }
                 case 3:
                     dispatcher->collisionPairs[i->first]=2;
-                    //cout << "  dbm debug collision continues for " << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
                     break;
-                }
-                if (i->second > 3) {
-                    cout << "dbm debug SHOULD NOT OCCUR" << endl;
                 }
             }
         }
