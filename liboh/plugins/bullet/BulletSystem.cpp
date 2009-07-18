@@ -417,8 +417,8 @@ bool BulletSystem::tick() {
 
 void customNearCallback(btBroadphasePair& collisionPair, btCollisionDispatcher& dispatcher,
                         const btDispatcherInfo& dispatchInfo) {
-    // Do your collision logic here
-    // Only dispatch the Bullet collision information if you want the physics to continue
+    /// we gots to do the stuff Bullet does ourselves to capture the collisionPair
+
     btCollisionObject* colObj0 = (btCollisionObject*)collisionPair.m_pProxy0->m_clientObject;
     btCollisionObject* colObj1 = (btCollisionObject*)collisionPair.m_pProxy1->m_clientObject;
 
@@ -442,7 +442,7 @@ void customNearCallback(btBroadphasePair& collisionPair, btCollisionDispatcher& 
                     dispatchInfo.m_timeOfImpact = toi;
             }
             int contacts = contactPointResult.getPersistentManifold()->getNumContacts();
-            cout << "dbm: customNearCallback, contact count:" << contacts << endl;
+            //cout << "dbm: customNearCallback, contact count:" << contacts << endl;
             if (contacts) {
                 bulletObj* siri0 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj0];
                 bulletObj* siri1 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj1];
