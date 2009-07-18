@@ -43,8 +43,8 @@ using namespace std;
 using std::tr1::placeholders::_1;
 static int core_plugin_refcount = 0;
 
-#define DEBUG_OUTPUT(x) x
-//#define DEBUG_OUTPUT(x)
+//#define DEBUG_OUTPUT(x) x
+#define DEBUG_OUTPUT(x)
 
 SIRIKATA_PLUGIN_EXPORT_C void init() {
     using namespace Sirikata;
@@ -94,6 +94,7 @@ void bulletObj::setPhysical (const physicalParameters &pp) {
     DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl;)
     switch (pp.mode) {
     case Disabled:
+        DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: Disabled" << endl);
         active = false;
         dynamic = false;
         break;
@@ -111,6 +112,7 @@ void bulletObj::setPhysical (const physicalParameters &pp) {
         break;
     }
     if (!(pp.mode==Disabled)) {
+        DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: adding to bullet" << endl);
         positionOrientation po;
         po.p = meshptr->getPosition();
         po.o = meshptr->getOrientation();
