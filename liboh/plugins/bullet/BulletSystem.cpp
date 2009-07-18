@@ -392,18 +392,19 @@ bool BulletSystem::tick() {
                 btCollisionObject* b0=*j;
                 ++j;
                 btCollisionObject* b1=*j;
-                switch (i->second) {
-                case 1:
-                    dispatcher->collisionPairs[i->first]=2;
+                if (i->second==1) {
                     cout << "  dbm debug collision begins at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
                     << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
-                    break;
-                case 2:
-                    dispatcher->collisionPairs[i->first]=0;
+                    dispatcher->collisionPairs[i->first]=2;
+                }
+                else if (i->second==2) {
+//                    dispatcher->collisionPairs[i->first]=0;
                     cout << "  dbm debug collision ends at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
                     << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
-                    break;
-                case 3:
+                    dispatcher->collisionPairs.erase(i);
+                    if (i==dispatcher->collisionPairs.end()) break;
+                }
+                else if (i->second==3) {
                     dispatcher->collisionPairs[i->first]=2;
                     break;
                 }
