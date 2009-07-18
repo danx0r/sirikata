@@ -399,7 +399,7 @@ bool BulletSystem::tick() {
                     dispatcher->collisionPairs[i->first]=2;
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
-                    cout << "  dbm debug collision ends at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
+                    cout << "  --dbm debug collision ends at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
                     << b0->name << " and " << b1->name << endl;
                     dispatcher->collisionPairs.erase(i);
                     if (i==dispatcher->collisionPairs.end()) break;
