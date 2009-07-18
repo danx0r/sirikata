@@ -1,5 +1,5 @@
-objtype,subtype,pos_x,pos_y,pos_z,orient_x,orient_y,orient_z,orient_w,scale_x,scale_y,scale_z,density,friction,bounce,meshURI,diffuse_x,diffuse_y,diffuse_z,ambient,specular_x,specular_y,specular_z,shadowpower,range,constantfall,linearfall,quadfall,cone_in,cone_out,power,cone_fall,shadow
-camera,,-30.850817,4.000000,1.844866,4.263092,-86.860000,-0.000000,
-light,directional,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,,,,,,,,,1.000000,1.000000,1.000000,0.000000,0.000000,0.000000,0.000000,nan,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0
-mesh,staticmesh,0.000000,0.500000,0.400000,0.000000,0.000000,0.000000,,4.000000,2.000000,4.000000,0.000000,0.200000,0.800000,meru://daniel@/cube.mesh
-mesh,dynamicsphere,0.100000,15.000000,0.000000,0.000000,0.000000,0.000000,,1.000000,1.000000,1.000000,1.000000,0.500000,0.900000,meru://daniel@/sphere.mesh
+"objtype","name","subtype","pos_x","pos_y","pos_z","orient_x","orient_y","orient_z","orient_w","scale_x","scale_y","scale_z","density","friction","bounce","meshURI","diffuse_x","diffuse_y","diffuse_z","ambient","specular_x","specular_y","specular_z","shadowpower","range","constantfall","linearfall","quadfall","cone_in","cone_out","power","cone_fall","shadow"
+"camera",,,-30.85,4,1.84,4.26,-86.86,0,,,,,,,,,,,,,,,,,,,,,,,,,
+"light",,"directional",0,0,0,0,0,0,,,,,,,,,1,1,1,0,0,0,0,"nan",0,0,0,0,0,0,0,0,0
+"mesh","box1","staticmesh",0,0.5,0.4,0,0,0,,4,2,4,0,0.2,0.8,"meru://daniel@/cube.mesh",,,,,,,,,,,,,,,,,
+"mesh","ball1","dynamicsphere",0.1,15,0,0,0,0,,1,1,1,1,0.5,0.9,"meru://daniel@/sphere.mesh",,,,,,,,,,,,,,,,,

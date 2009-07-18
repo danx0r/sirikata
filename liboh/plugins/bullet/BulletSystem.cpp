@@ -345,8 +345,6 @@ void BulletSystem::removePhysicalObject(bulletObj* obj) {
     }
 }
 
-Task::AbsTime bugtimestart=Task::AbsTime::now();
-
 bool BulletSystem::tick() {
     static Task::AbsTime starttime = Task::AbsTime::now();
     static Task::AbsTime lasttime = starttime;
@@ -388,41 +386,38 @@ bool BulletSystem::tick() {
                     objects[i]->meshptr->setPosition(now, po.p, po.o);
                 }
             }
+            for (map<set<btCollisionObject*>, int>::iterator i=dispatcher->collisionPairs.begin();
+                    i != dispatcher->collisionPairs.end(); ++i) {
+                set<btCollisionObject*>::iterator j=i->first.begin() ;
+                btCollisionObject* b0=*j;
+                ++j;
+                btCollisionObject* b1=*j;
+                //cout << "dbm debug tick: " << i->second << endl;
+                switch (i->second) {
+                case 1:
+                    dispatcher->collisionPairs[i->first]=2;
+                    cout << "  dbm debug collision begins for " << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
+                    break;
+                case 2: {
+                    dispatcher->collisionPairs[i->first]=0;
+                    cout << "  dbm debug collision ends for " << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
+                    break;
+//                    dispatcher->collisionPairs.erase(i);
+                }
+                case 3:
+                    dispatcher->collisionPairs[i->first]=2;
+                    //cout << "  dbm debug collision continues for " << bt2siri[b0]->name << " and " << bt2siri[b1]->name << endl;
+                    break;
+                }
+                if (i->second > 3) {
+                    cout << "dbm debug SHOULD NOT OCCUR" << endl;
+                }
+            }
         }
     }
     DEBUG_OUTPUT(cout << endl;)
     return 0;
 }
-
-class customDispatch :public btCollisionDispatcher {
-    map<btCollisionObject*, bulletObj*>* bt2siri;
-    set<set<btCollisionObject*> > collisionPairs;       /// use set as key because order is irrelevant
-public:
-    customDispatch(btCollisionConfiguration* collisionConfiguration,
-                   map<btCollisionObject*, bulletObj*>* bt2siri) :
-            btCollisionDispatcher(collisionConfiguration) {
-        this->bt2siri=bt2siri;
-    }
-    bool needsCollision(btCollisionObject* body0,btCollisionObject* body1) {
-        bool collision = btCollisionDispatcher::needsCollision(body0, body1);
-        bulletObj* siri0 = bt2siri[0][body0];
-        bulletObj* siri1 = bt2siri[0][body1];
-        if (siri0 && siri1) {
-            set<btCollisionObject*> temp;
-            temp.insert(body0);
-            temp.insert(body1);
-            if (collisionPairs.count(temp)>0) {
-//            cout << "dbm debug: this pair already in set" << endl;
-            }
-            else {
-                collisionPairs.insert(temp);
-                cout << "dbm debug: new collision: " << collision << " @time: " << (Task::AbsTime::now()-bugtimestart).toSeconds()
-                << " " << siri0->name << " starts colliding with " << siri1->name << endl;
-            }
-        }
-        return collision;
-    }
-};
 
 bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, const String&options) {
     DEBUG_OUTPUT(cout << "dbm: BulletSystem::initialize options: " << options << endl);

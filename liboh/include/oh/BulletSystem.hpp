@@ -340,6 +340,49 @@ public:
     void buildBulletShape(const unsigned char* meshdata, int meshbytes, float& mass);
 };
 
+Task::AbsTime bugtimestart=Task::AbsTime::now();
+
+class customDispatch :public btCollisionDispatcher {
+    map<btCollisionObject*, bulletObj*>* bt2siri;
+    /// here's some tweaky logic.  If pairs=0, then this is a new collision; send a msg
+    /// always add 1
+    /// later, ::tick sweeps through and changes 1 to 2
+    /// next pass here changes 2 to 3
+    /// if ::tick sees a 2, it deletes it (end collision)
+    /// if ::tick sees a 3, make it a 2 again
+    public:
+        map<set<btCollisionObject*>, int> collisionPairs;
+        customDispatch(btCollisionConfiguration* collisionConfiguration,
+                   map<btCollisionObject*, bulletObj*>* bt2siri) :
+                btCollisionDispatcher(collisionConfiguration) {
+            this->bt2siri=bt2siri;
+                }
+                bool needsCollision(btCollisionObject* body0,btCollisionObject* body1) {
+                    bool collision = btCollisionDispatcher::needsCollision(body0, body1);
+                    bulletObj* siri0 = bt2siri[0][body0];
+                    bulletObj* siri1 = bt2siri[0][body1];
+                    if (siri0 && siri1) {
+                        set<btCollisionObject*> temp;
+                        temp.insert(body0);
+                        temp.insert(body1);
+                        if (collisionPairs[temp]>0) {
+                            //cout << "dbm debug: this pair already in map, #=" << collisionPairs[temp] 
+                            //        << " " << siri0->name << ":" << siri1->name << endl;
+                            if (collisionPairs[temp] == 2) {
+                                collisionPairs[temp]++;
+                            }
+                        }
+                        else {
+                            //cout << "dbm debug: new collision: " << collision << " @time: " 
+                              //      << (Task::AbsTime::now()-bugtimestart).toSeconds()
+                                //    << " " << siri0->name << " starts colliding with " << siri1->name << endl;
+                            collisionPairs[temp]++;
+                        }
+                    }
+                    return collision;
+                }
+};
+
 class BulletSystem: public TimeSteppedSimulation {
     bool initialize(Provider<ProxyCreationListener*>*proxyManager,
                     const String&options);
@@ -351,7 +394,7 @@ class BulletSystem: public TimeSteppedSimulation {
 
     ///local bullet stuff:
     btDefaultCollisionConfiguration* collisionConfiguration;
-    btCollisionDispatcher* dispatcher;
+    customDispatch* dispatcher;
     btAxisSweep3* overlappingPairCache;
     btSequentialImpulseConstraintSolver* solver;
     btCollisionShape* groundShape;
