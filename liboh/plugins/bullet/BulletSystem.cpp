@@ -281,7 +281,6 @@ void bulletObj::buildBulletBody(const unsigned char* meshdata, int meshbytes) {
     }
     system->dynamicsWorld->addRigidBody(body);
     bulletBodyPtr=body;
-    cout << "dbm debug: body: " << body << endl;
     active=true;
     system->bt2siri[body]=this;
 }
