@@ -315,8 +315,8 @@ public:
     float sizeY;
     float sizeZ;
     string name;
-    int collision;
-    int cmessage;
+    int colMask;
+    int colMsg;
 
     /// public methods
     bulletObj(BulletSystem* sys) :
@@ -354,25 +354,6 @@ public:
             btCollisionDispatcher(collisionConfiguration) {
         this->bt2siri=bt2siri;
     }
-    
-    /*
-    bool needsResponse(btCollisionObject* body0,btCollisionObject* body1) {
-        bool collision = btCollisionDispatcher::needsResponse(body0, body1);
-        if (collision) {
-            bulletObj* siri0 = bt2siri[0][body0];
-            bulletObj* siri1 = bt2siri[0][body1];
-            if (siri0 && siri1) {
-                if (siri0->collision & siri1->collision) {
-                    set<btCollisionObject*> temp;
-                    temp.insert(body0);
-                    temp.insert(body1);
-                    collisionPairs[temp] |= 1;
-                }
-            }
-        }
-        return collision;
-    }
-    */
 };
 
 class BulletSystem: public TimeSteppedSimulation {

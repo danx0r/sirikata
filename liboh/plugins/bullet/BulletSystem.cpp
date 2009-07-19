@@ -93,8 +93,8 @@ void bulletObj::meshChanged (const URI &newMesh) {
 void bulletObj::setPhysical (const physicalParameters &pp) {
     DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl);
     name = pp.name;
-    collision = pp.collision;
-    cmessage = pp.cmessage;
+    colMask = pp.colMask;
+    colMsg = pp.colMsg;
     switch (pp.mode) {
     case Disabled:
         DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: Disabled" << endl);
@@ -396,20 +396,20 @@ bool BulletSystem::tick() {
                 bulletObj* b1=*j;
                 if (i->second==1) {             /// recently colliding; send msg & change mode
                     cout << "collision time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() << endl;
-                    if (b1->cmessage & b0->collision) {
+                    if (b1->colMsg & b0->colMask) {
                         cout << "   begin collision msg: " << b0->name << " --> " << b1->name << endl;
                     }
-                    if (b0->cmessage & b1->collision) {
+                    if (b0->colMsg & b1->colMask) {
                         cout << "   begin collision msg: " << b1->name << " --> " << b0->name << endl;
                     }
                     dispatcher->collisionPairs[i->first]=2;
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
                     cout << "collision time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() << endl;
-                    if (b1->cmessage & b0->collision) {
+                    if (b1->colMsg & b0->colMask) {
                         cout << "   end collision msg: " << b0->name << " --> " << b1->name << endl;
                     }
-                    if (b0->cmessage & b1->collision) {
+                    if (b0->colMsg & b1->colMask) {
                         cout << "   end collision msg: " << b1->name << " --> " << b0->name << endl;
                     }
                     dispatcher->collisionPairs.erase(i);
@@ -457,7 +457,7 @@ void customNearCallback(btBroadphasePair& collisionPair, btCollisionDispatcher& 
                 bulletObj* siri0 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj0];
                 bulletObj* siri1 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj1];
                 if (siri0 && siri1) {
-                    if (siri0->collision & siri1->collision) {
+                    if (siri0->colMask & siri1->colMask) {
                         set<bulletObj*> temp;
                         temp.insert(siri0);
                         temp.insert(siri1);
