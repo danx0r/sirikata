@@ -250,7 +250,7 @@ public:
                 }
             }
             else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
-                radianZ = 3.14159 * 2 * -ev->deltaX() * sensitivity;
+                radianZ = 3.14159 * 2 * -ev->deltaY() * sensitivity;
             }
             else {
                 radianY = 3.14159 * 2 * ev->deltaX() * sensitivity;
