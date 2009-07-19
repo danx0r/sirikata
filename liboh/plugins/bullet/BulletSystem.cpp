@@ -92,8 +92,9 @@ void bulletObj::meshChanged (const URI &newMesh) {
 
 void bulletObj::setPhysical (const physicalParameters &pp) {
     DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl);
-    this->name = pp.name;
-    this->collision = pp.collision;
+    name = pp.name;
+    collision = pp.collision;
+    cmessage = pp.cmessage;
     switch (pp.mode) {
     case Disabled:
         DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: Disabled" << endl);
@@ -381,8 +382,8 @@ bool BulletSystem::tick() {
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->active) {
                     po = objects[i]->getBulletState();
-                    DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->name << ", delta, " << delta.toSeconds() << ", newpos, " << po.p
-                                 << "obj: " << objects[i] << endl;)
+                    DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->name << ", delta, "
+                                 << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl;)
                     objects[i]->meshptr->setPosition(now, po.p, po.o);
                 }
             }
@@ -394,13 +395,23 @@ bool BulletSystem::tick() {
                 bulletObj* b0=*j++;
                 bulletObj* b1=*j;
                 if (i->second==1) {             /// recently colliding; send msg & change mode
-                    cout << "  dbm debug collision begins at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
-                    << b0->name << " and " << b1->name << endl;
+                    cout << "collision time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() << endl;
+                    if (b1->cmessage & b0->collision) {
+                        cout << "   begin collision msg: " << b0->name << " --> " << b1->name << endl;
+                    }
+                    if (b0->cmessage & b1->collision) {
+                        cout << "   begin collision msg: " << b1->name << " --> " << b0->name << endl;
+                    }
                     dispatcher->collisionPairs[i->first]=2;
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
-                    cout << "  --dbm debug collision ends at " << (Task::AbsTime::now()-bugtimestart).toSeconds() << " "
-                    << b0->name << " and " << b1->name << endl;
+                    cout << "collision time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() << endl;
+                    if (b1->cmessage & b0->collision) {
+                        cout << "   end collision msg: " << b0->name << " --> " << b1->name << endl;
+                    }
+                    if (b0->cmessage & b1->collision) {
+                        cout << "   end collision msg: " << b1->name << " --> " << b0->name << endl;
+                    }
                     dispatcher->collisionPairs.erase(i);
                     if (i==dispatcher->collisionPairs.end()) break;
                 }

@@ -45,6 +45,7 @@ struct physicalParameters {
     float friction;
     float bounce;
     int collision;
+    int cmessage;
 };
 
 class SIRIKATA_OH_EXPORT MeshListener {

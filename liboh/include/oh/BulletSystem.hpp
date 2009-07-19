@@ -316,6 +316,7 @@ public:
     float sizeZ;
     string name;
     int collision;
+    int cmessage;
 
     /// public methods
     bulletObj(BulletSystem* sys) :
