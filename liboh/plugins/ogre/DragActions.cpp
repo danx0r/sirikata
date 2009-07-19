@@ -239,17 +239,21 @@ public:
             float radianX = 0;
             float radianY = 0;
             float radianZ = 0;
+            float sensitivity = 0.25;
+            if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) {
+                sensitivity = 0.1;
+            }
             if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT)) {
-                radianX = 3.14159 * 2 * ev->deltaY();
+                radianX = 3.14159 * 2 * -ev->deltaY() * sensitivity;
                 if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
-                    radianZ = 3.14159 * 2 * ev->deltaX();
+                    radianZ = 3.14159 * 2 * -ev->deltaX() * sensitivity;
                 }
             }
             else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
-                radianZ = 3.14159 * 2 * ev->deltaY();
+                radianZ = 3.14159 * 2 * -ev->deltaX() * sensitivity;
             }
             else {
-                radianY = 3.14159 * 2 * ev->deltaX();;
+                radianY = 3.14159 * 2 * ev->deltaX() * sensitivity;
             }
             for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
                 const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
