@@ -43,8 +43,8 @@ using namespace std;
 using std::tr1::placeholders::_1;
 static int core_plugin_refcount = 0;
 
-//#define DEBUG_OUTPUT(x) x
-#define DEBUG_OUTPUT(x)
+#define DEBUG_OUTPUT(x) x
+//#define DEBUG_OUTPUT(x)
 
 SIRIKATA_PLUGIN_EXPORT_C void init() {
     using namespace Sirikata;
@@ -91,7 +91,10 @@ void bulletObj::meshChanged (const URI &newMesh) {
 }
 
 void bulletObj::setPhysical (const physicalParameters &pp) {
-    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl;)
+    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << meshname << endl);
+    name = pp.name;
+    collision = pp.collision;
+    cmessage = pp.cmessage;
     switch (pp.mode) {
     case Disabled:
         DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: Disabled" << endl);
@@ -280,6 +283,7 @@ void bulletObj::buildBulletBody(const unsigned char* meshdata, int meshbytes) {
     system->dynamicsWorld->addRigidBody(body);
     bulletBodyPtr=body;
     active=true;
+    system->bt2siri[body]=this;
 }
 
 Task::EventResponse BulletSystem::downloadFinished(Task::EventPtr evbase, bulletObj* bullobj) {
@@ -343,7 +347,8 @@ void BulletSystem::removePhysicalObject(bulletObj* obj) {
 }
 
 bool BulletSystem::tick() {
-    static Task::AbsTime starttime = Task::AbsTime::now();
+    //static Task::AbsTime starttime = Task::AbsTime::now();
+    static Task::AbsTime starttime = bugtimestart;
     static Task::AbsTime lasttime = starttime;
     static Task::DeltaTime waittime = Task::DeltaTime::seconds(0.02);
     static int mode = 0;
@@ -361,7 +366,7 @@ bool BulletSystem::tick() {
                 if (objects[i]->active) {
                     if (objects[i]->meshptr->getPosition() != objects[i]->getBulletState().p) {
                         /// if object has been moved, reset bullet position accordingly
-                        DEBUG_OUTPUT(cout << "    dbm: item, " << i << " moved by user!"
+                        DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->name << " moved by user!"
                                      << " meshpos: " << objects[i]->meshptr->getPosition()
                                      << " bulletpos before reset: " << objects[i]->getBulletState().p;)
                         objects[i]->setBulletState(
@@ -373,20 +378,95 @@ bool BulletSystem::tick() {
                     }
                 }
             }
-            //dynamicsWorld->stepSimulation(delta,0);
             dynamicsWorld->stepSimulation(delta,10);
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->active) {
                     po = objects[i]->getBulletState();
-                    DEBUG_OUTPUT(cout << "    dbm: item, " << i << ", delta, " << delta.toSeconds() << ", newpos, " << po.p
-                                 << "obj: " << objects[i] << endl;)
+                    DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->name << ", delta, "
+                                 << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl;)
                     objects[i]->meshptr->setPosition(now, po.p, po.o);
+                }
+            }
+
+            /// collision messages
+            for (map<set<bulletObj*>, int>::iterator i=dispatcher->collisionPairs.begin();
+                    i != dispatcher->collisionPairs.end(); ++i) {
+                set<bulletObj*>::iterator j=i->first.begin() ;
+                bulletObj* b0=*j++;
+                bulletObj* b1=*j;
+                if (i->second==1) {             /// recently colliding; send msg & change mode
+                    cout << "collision time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() << endl;
+                    if (b1->cmessage & b0->collision) {
+                        cout << "   begin collision msg: " << b0->name << " --> " << b1->name << endl;
+                    }
+                    if (b0->cmessage & b1->collision) {
+                        cout << "   begin collision msg: " << b1->name << " --> " << b0->name << endl;
+                    }
+                    dispatcher->collisionPairs[i->first]=2;
+                }
+                else if (i->second==2) {        /// didn't get flagged again; collision now over
+                    cout << "collision time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() << endl;
+                    if (b1->cmessage & b0->collision) {
+                        cout << "   end collision msg: " << b0->name << " --> " << b1->name << endl;
+                    }
+                    if (b0->cmessage & b1->collision) {
+                        cout << "   end collision msg: " << b1->name << " --> " << b0->name << endl;
+                    }
+                    dispatcher->collisionPairs.erase(i);
+                    if (i==dispatcher->collisionPairs.end()) break;
+                }
+                else if (i->second==3) {        /// re-flagged, so still colliding. clear flag
+                    dispatcher->collisionPairs[i->first]=2;
                 }
             }
         }
     }
     DEBUG_OUTPUT(cout << endl;)
     return 0;
+}
+
+void customNearCallback(btBroadphasePair& collisionPair, btCollisionDispatcher& dispatcher,
+                        const btDispatcherInfo& dispatchInfo) {
+    /// we gots to do the stuff Bullet does ourselves to capture the collisionPair
+
+    btCollisionObject* colObj0 = (btCollisionObject*)collisionPair.m_pProxy0->m_clientObject;
+    btCollisionObject* colObj1 = (btCollisionObject*)collisionPair.m_pProxy1->m_clientObject;
+
+    if (dispatcher.needsCollision(colObj0,colObj1)) {
+        //dispatcher will keep algorithms persistent in the collision pair
+        if (!collisionPair.m_algorithm) {
+            collisionPair.m_algorithm = dispatcher.findAlgorithm(colObj0,colObj1);
+        }
+
+        if (collisionPair.m_algorithm) {
+            btManifoldResult contactPointResult(colObj0,colObj1);
+
+            if (dispatchInfo.m_dispatchFunc ==      btDispatcherInfo::DISPATCH_DISCRETE) {
+                //discrete collision detection query
+                collisionPair.m_algorithm->processCollision(colObj0,colObj1,dispatchInfo,&contactPointResult);
+            }
+            else {
+                //continuous collision detection query, time of impact (toi)
+                btScalar toi = collisionPair.m_algorithm->calculateTimeOfImpact(colObj0,colObj1,dispatchInfo,&contactPointResult);
+                if (dispatchInfo.m_timeOfImpact > toi)
+                    dispatchInfo.m_timeOfImpact = toi;
+            }
+            int contacts = contactPointResult.getPersistentManifold()->getNumContacts();
+            //cout << "dbm: customNearCallback, contact count:" << contacts << endl;
+            if (contacts) {
+                bulletObj* siri0 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj0];
+                bulletObj* siri1 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj1];
+                if (siri0 && siri1) {
+                    if (siri0->collision & siri1->collision) {
+                        set<bulletObj*> temp;
+                        temp.insert(siri0);
+                        temp.insert(siri1);
+                        ((customDispatch*)(&dispatcher))->collisionPairs[temp] |= 1;
+                    }
+                }
+            }
+        }
+    }
 }
 
 bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, const String&options) {
@@ -412,7 +492,9 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
 
     /// set up bullet stuff
     collisionConfiguration = new btDefaultCollisionConfiguration();
-    dispatcher = new btCollisionDispatcher(collisionConfiguration);
+    //dispatcher = new btCollisionDispatcher(collisionConfiguration);
+    dispatcher = new customDispatch(collisionConfiguration, &bt2siri);
+    dispatcher->setNearCallback(customNearCallback);
     overlappingPairCache= new btAxisSweep3(worldAabbMin,worldAabbMax,maxProxies);
     solver = new btSequentialImpulseConstraintSolver;
     dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
@@ -429,7 +511,7 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     groundBody = new btRigidBody(rbInfo);
     groundBody->setRestitution(0.5);                 /// bouncy for fun & profit
     dynamicsWorld->addRigidBody(groundBody);
-
+    cout << "dbm debug: groundBody: " << groundBody << endl;
     proxyManager->addListener(this);
     DEBUG_OUTPUT(cout << "dbm: BulletSystem::initialized, including test bullet object" << endl);
     /// we don't delete these, the ProxyManager does (I think -- someone does anyway)
