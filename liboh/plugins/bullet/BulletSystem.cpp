@@ -391,7 +391,7 @@ bool BulletSystem::tick() {
             /// collision messages
             for (map<set<bulletObj*>, int>::iterator i=dispatcher->collisionPairs.begin();
                     i != dispatcher->collisionPairs.end(); ++i) {
-                set<bulletObj*>::iterator j=i->first.begin() ;
+                set<bulletObj*>::const_iterator j=i->first.begin() ;
                 bulletObj* b0=*j++;
                 bulletObj* b1=*j;
                 if (i->second==1) {             /// recently colliding; send msg & change mode
@@ -412,7 +412,8 @@ bool BulletSystem::tick() {
                     if (b0->colMsg & b1->colMask) {
                         cout << "   end collision msg: " << b1->name << " --> " << b0->name << endl;
                     }
-                    dispatcher->collisionPairs.erase(i);
+					map<set<bulletObj*>, int>::iterator temp = i++;			///	(sigh) rage against the machine
+					dispatcher->collisionPairs.erase(temp);
                     if (i==dispatcher->collisionPairs.end()) break;
                 }
                 else if (i->second==3) {        /// re-flagged, so still colliding. clear flag
@@ -452,7 +453,7 @@ void customNearCallback(btBroadphasePair& collisionPair, btCollisionDispatcher& 
                     dispatchInfo.m_timeOfImpact = toi;
             }
             int contacts = contactPointResult.getPersistentManifold()->getNumContacts();
-            //cout << "dbm: customNearCallback, contact count:" << contacts << endl;
+            cout << "dbm: customNearCallback, contact count:" << contacts << endl;
             if (contacts) {
                 bulletObj* siri0 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj0];
                 bulletObj* siri1 = ((customDispatch*)(&dispatcher))->bt2siri[0][colObj1];
