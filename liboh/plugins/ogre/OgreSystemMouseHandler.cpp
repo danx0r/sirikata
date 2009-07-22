@@ -527,11 +527,11 @@ private:
             return EventResponse::nop();
         }
         float amount = buttonev->mPressed?1:0;
-
+    
         CameraEntity *cam = mParent->mPrimaryCamera;
         Location loc = cam->getProxy().extrapolateLocation(now);
         const Quaternion &orient = loc.getOrientation();
-        
+    
         switch (buttonev->mButton) {
         case SDL_SCANCODE_S:
             amount*=-1;
@@ -550,13 +550,31 @@ private:
         case SDL_SCANCODE_DOWN:
             amount*=-1;
         case SDL_SCANCODE_UP:
-            loc.setAxisOfRotation(Vector3f(1,0,0));
-            loc.setAngularSpeed(buttonev->mPressed?amount:0);
-            loc.setVelocity(Vector3f(0,0,0));
+            amount *= 0.5;
+            if (mParent->mInputManager->isModifierDown(InputDevice::MOD_SHIFT)) {
+                loc.setAxisOfRotation(Vector3f(1,0,0));
+                loc.setAngularSpeed(buttonev->mPressed?amount:0);
+                loc.setVelocity(Vector3f(0,0,0));
+            }
+            else {
+                amount *= WORLD_SCALE;
+                loc.setVelocity(direction(orient)*amount);
+                loc.setAngularSpeed(0);
+            }
+            break;
+        case SDL_SCANCODE_PAGEDOWN:
+            amount*=-1;
+        case SDL_SCANCODE_PAGEUP:
+            amount *= 0.25;
+            amount *= WORLD_SCALE;
+            std::cout << "dbm debug PAGEUP amount: " << amount << std::endl;
+            loc.setVelocity(Vector3f(0,1,0)*amount);
+            loc.setAngularSpeed(0);
             break;
         case SDL_SCANCODE_RIGHT:
             amount*=-1;
         case SDL_SCANCODE_LEFT:
+            if (mParent->mInputManager->isModifierDown(InputDevice::MOD_SHIFT)) amount *= 0.25;
             /// AngularSpeed needs a relative axis, so compute the global Y axis (yawAxis) in local frame
             double p, r, y;
             quat2Euler(loc.getOrientation(), p, r, y);
@@ -573,7 +591,7 @@ private:
         cam->getProxy().setPositionVelocity(now, loc);
         return EventResponse::nop();
     }
-
+    
     EventResponse import(EventPtr ev) {
         std::cout << "input path name for import: " << std::endl;
         std::string filename;
@@ -794,14 +812,26 @@ private:
                 registerButtonListener(ev->mDevice, &MouseHandler::leaveObject, SDL_SCANCODE_ESCAPE);
                 registerButtonListener(ev->mDevice, &MouseHandler::createLight, SDL_SCANCODE_B);
 
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_PAGEUP);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_PAGEUP,true);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_PAGEDOWN);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_PAGEDOWN,true);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_W,false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_A,false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_S,false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_D,false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, true, InputDevice::MOD_SHIFT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_DOWN);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_DOWN, true, InputDevice::MOD_SHIFT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_DOWN, false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_LEFT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_LEFT, true, InputDevice::MOD_SHIFT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_LEFT, false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_RIGHT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_RIGHT, false, InputDevice::MOD_SHIFT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_RIGHT, false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_W,true, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_A,true, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_S,true, InputDevice::MOD_SHIFT);
