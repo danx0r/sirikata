@@ -230,59 +230,64 @@ class RotateObjectDrag : public ActiveDrag {
     OgreSystem *mParent;
     std::vector<ProxyPositionObjectPtr> mSelectedObjects;
     std::vector<Quaternion > mOriginalRotation;
+    std::vector<Vector3d> mOriginalPosition;
 public:
     RotateObjectDrag(const DragStartInfo &info)
-        : mParent (info.sys),
-          mSelectedObjects (info.objects.begin(), info.objects.end()) {
-		mOriginalRotation.reserve(mSelectedObjects.size());
-		Task::AbsTime now = Task::AbsTime::now();
-		for (size_t i = 0; i < mSelectedObjects.size(); ++i) {
-			Location currentLoc = mSelectedObjects[i]->extrapolateLocation(now);
-			mOriginalRotation.push_back(currentLoc.getOrientation());
-		}
+            : mParent (info.sys),
+            mSelectedObjects (info.objects.begin(), info.objects.end()) {
+        mOriginalRotation.reserve(mSelectedObjects.size());
+        mOriginalPosition.reserve(mSelectedObjects.size());
+        Task::AbsTime now = Task::AbsTime::now();
+        for (size_t i = 0; i < mSelectedObjects.size(); ++i) {
+            Location currentLoc = mSelectedObjects[i]->extrapolateLocation(now);
+            mOriginalRotation.push_back(currentLoc.getOrientation());
+            mOriginalPosition.push_back(currentLoc.getPosition());
+        }
     }
     void mouseMoved(MouseDragEventPtr ev) {
-            Task::AbsTime now(Task::AbsTime::now());
-            // one screen width = one full rotation
-			float SNAP_RADIANS = mParent->getInputManager()->mRotateSnap->as<float>();
-            float radianX = 0;
-            float radianY = 0;
-            float radianZ = 0;
-            float sensitivity = 0.25;
-            Vector3d avgPos(0,0,0);
-            for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
-                const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
-                Location loc (ent->extrapolateLocation(now));
-                avgPos += loc.getPosition();
+        Task::AbsTime now(Task::AbsTime::now());
+        // one screen width = one full rotation
+        float SNAP_RADIANS = mParent->getInputManager()->mRotateSnap->as<float>();
+        float radianX = 0;
+        float radianY = 0;
+        float radianZ = 0;
+        float sensitivity = 0.25;
+        Vector3d avgPos(0,0,0);
+        for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
+            const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
+            Location loc (ent->extrapolateLocation(now));
+            avgPos += loc.getPosition();
+        }
+        avgPos /= mSelectedObjects.size();
+
+        if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) {
+            sensitivity = 0.1;
+        }
+        if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT)) {
+            radianX = 3.14159 * 2 * -ev->deltaY() * sensitivity;
+            if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
+                radianZ = 3.14159 * 2 * -ev->deltaX() * sensitivity;
             }
-            avgPos /= mSelectedObjects.size();
-            
-            if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) {
-                sensitivity = 0.1;
-            }
-            if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT)) {
-                radianX = 3.14159 * 2 * -ev->deltaY() * sensitivity;
-                if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
-                    radianZ = 3.14159 * 2 * -ev->deltaX() * sensitivity;
-                }
-            }
-            else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
-                radianZ = 3.14159 * 2 * -ev->deltaY() * sensitivity;
-            }
-            else {
-                radianY = 3.14159 * 2 * ev->deltaX() * sensitivity;
-            
-            }
-            Quaternion dragRotation (   Quaternion(Vector3f(1,0,0),radianX)*
-                                        Quaternion(Vector3f(0,1,0),radianY)*
-                                        Quaternion(Vector3f(0,0,1),radianZ));
-            
-            for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
-                const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
-                Location loc (ent->extrapolateLocation(now));
-                loc.setOrientation(dragRotation*mOriginalRotation[i]);
-                ent->resetPositionVelocity(now, loc);
-            }
+        }
+        else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
+            radianZ = 3.14159 * 2 * -ev->deltaY() * sensitivity;
+        }
+        else {
+            radianY = 3.14159 * 2 * ev->deltaX() * sensitivity;
+
+        }
+        Quaternion dragRotation (   Quaternion(Vector3f(1,0,0),radianX)*
+                                    Quaternion(Vector3f(0,1,0),radianY)*
+                                    Quaternion(Vector3f(0,0,1),radianZ));
+
+        for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
+            const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
+            Location loc (ent->extrapolateLocation(now));
+            Vector3d localTrans = mOriginalPosition[i] - avgPos;
+            loc.setPosition(avgPos + dragRotation*localTrans);
+            loc.setOrientation(dragRotation*mOriginalRotation[i]);
+            ent->resetPositionVelocity(now, loc);
+        }
     }
 };
 DragActionRegistry::RegisterClass<RotateObjectDrag> rotateobj("rotateObject");
