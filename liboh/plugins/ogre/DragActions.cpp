@@ -185,22 +185,23 @@ public:
     
         /// dbm new way: ignore camera, just move along global axes
         Vector3d toMove(0,0,0);
-        double sensitivity = 10.0;
-        if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) sensitivity = 2.5;
+        double sensitivity = 20.0;
+        Location cameraLoc = camera->getProxy().globalLocation(now);
+        Vector3f cameraAxis = -cameraLoc.getOrientation().zAxis();
+        if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) sensitivity = 5.0;
         if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT &&
                 mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL))) {
             toMove.y = ev->deltaY()*sensitivity;
         }
         else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT)) {
+            if (cameraAxis.z > 0) sensitivity *=-1;
             toMove.x = ev->deltaX()*sensitivity;
         }
         else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
+            if (cameraAxis.x < 0) sensitivity *=-1;
             toMove.z = ev->deltaX()*sensitivity;
         }
         else {
-            Location cameraLoc = camera->getProxy().globalLocation(now);
-            Vector3f cameraAxis = -cameraLoc.getOrientation().zAxis();
-    
             Vector3d startAxis (pixelToDirection(camera, cameraLoc.getOrientation(), ev->mXStart, ev->mYStart));
             Vector3d endAxis (pixelToDirection(camera, cameraLoc.getOrientation(), ev->mX, ev->mY));
             Vector3d start, end;
