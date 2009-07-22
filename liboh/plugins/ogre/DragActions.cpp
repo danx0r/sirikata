@@ -231,10 +231,12 @@ class RotateObjectDrag : public ActiveDrag {
     std::vector<ProxyPositionObjectPtr> mSelectedObjects;
     std::vector<Quaternion > mOriginalRotation;
     std::vector<Vector3d> mOriginalPosition;
+    CameraEntity *camera;
 public:
     RotateObjectDrag(const DragStartInfo &info)
             : mParent (info.sys),
             mSelectedObjects (info.objects.begin(), info.objects.end()) {
+        camera = info.camera;
         mOriginalRotation.reserve(mSelectedObjects.size());
         mOriginalPosition.reserve(mSelectedObjects.size());
         Task::AbsTime now = Task::AbsTime::now();
@@ -247,7 +249,8 @@ public:
     void mouseMoved(MouseDragEventPtr ev) {
         Task::AbsTime now(Task::AbsTime::now());
         // one screen width = one full rotation
-        float SNAP_RADIANS = mParent->getInputManager()->mRotateSnap->as<float>();
+        Location cameraLoc = camera->getProxy().globalLocation(now);
+        Vector3f cameraAxis = -cameraLoc.getOrientation().zAxis();
         float radianX = 0;
         float radianY = 0;
         float radianZ = 0;
@@ -259,27 +262,40 @@ public:
             avgPos += loc.getPosition();
         }
         avgPos /= mSelectedObjects.size();
-
+    
+        int ctlX, ctlZ;
+        if ((cameraAxis.x > 0 && cameraAxis.z > 0)
+                || (cameraAxis.x <= 0 && cameraAxis.z <= 0) ) {
+            ctlX = InputDevice::MOD_SHIFT;
+            ctlZ = InputDevice::MOD_CTRL;
+        }
+        else {
+            ctlX = InputDevice::MOD_CTRL;
+            ctlZ = InputDevice::MOD_SHIFT;
+        }
         if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) {
             sensitivity = 0.1;
         }
-        if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT)) {
-            radianX = 3.14159 * 2 * -ev->deltaY() * sensitivity;
-            if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
+        if (mParent->getInputManager()->isModifierDown(ctlX)) {
+            if (mParent->getInputManager()->isModifierDown(ctlZ)) {
                 radianZ = 3.14159 * 2 * -ev->deltaX() * sensitivity;
             }
+            else {
+                if (cameraAxis.z > 0) sensitivity *=-1;
+            }
+            radianX = 3.14159 * 2 * -ev->deltaY() * sensitivity;
         }
-        else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
+        else if (mParent->getInputManager()->isModifierDown(ctlZ)) {
+            if (cameraAxis.x <= 0) sensitivity *=-1;
             radianZ = 3.14159 * 2 * -ev->deltaY() * sensitivity;
         }
         else {
-            radianY = 3.14159 * 2 * ev->deltaX() * sensitivity;
-
+            radianY = 3.14159 * 2 * ev->deltaX() * sensitivity;    
         }
         Quaternion dragRotation (   Quaternion(Vector3f(1,0,0),radianX)*
                                     Quaternion(Vector3f(0,1,0),radianY)*
                                     Quaternion(Vector3f(0,0,1),radianZ));
-
+    
         for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
             const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
             Location loc (ent->extrapolateLocation(now));
