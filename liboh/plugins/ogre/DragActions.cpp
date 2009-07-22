@@ -249,6 +249,14 @@ public:
             float radianY = 0;
             float radianZ = 0;
             float sensitivity = 0.25;
+            Vector3d avgPos(0,0,0);
+            for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
+                const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
+                Location loc (ent->extrapolateLocation(now));
+                avgPos += loc.getPosition();
+            }
+            avgPos /= mSelectedObjects.size();
+            
             if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) {
                 sensitivity = 0.1;
             }
@@ -263,15 +271,16 @@ public:
             }
             else {
                 radianY = 3.14159 * 2 * ev->deltaX() * sensitivity;
+            
             }
+            Quaternion dragRotation (   Quaternion(Vector3f(1,0,0),radianX)*
+                                        Quaternion(Vector3f(0,1,0),radianY)*
+                                        Quaternion(Vector3f(0,0,1),radianZ));
+            
             for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
                 const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
                 Location loc (ent->extrapolateLocation(now));
-                loc.setOrientation(
-                        Quaternion(Vector3f(1,0,0),radianX)*
-                        Quaternion(Vector3f(0,1,0),radianY)*
-                        Quaternion(Vector3f(0,0,1),radianZ)*
-                        mOriginalRotation[i]);
+                loc.setOrientation(dragRotation*mOriginalRotation[i]);
                 ent->resetPositionVelocity(now, loc);
             }
     }
