@@ -518,7 +518,7 @@ private:
     }
     
     EventResponse moveHandler(EventPtr ev) {
-        Vector3f raxis;
+        Vector3f yawAxis;
         float WORLD_SCALE = mParent->mInputManager->mWorldScale->as<float>();
         Task::AbsTime now(Task::AbsTime::now());
         std::tr1::shared_ptr<ButtonEvent> buttonev (
@@ -557,13 +557,13 @@ private:
         case SDL_SCANCODE_RIGHT:
             amount*=-1;
         case SDL_SCANCODE_LEFT:
+            /// AngularSpeed needs a relative axis, so compute the global Y axis (yawAxis) in local frame
             double p, r, y;
             quat2Euler(loc.getOrientation(), p, r, y);
-            raxis.x = 0;
-            raxis.y = std::cos(p*DEG2RAD);
-            raxis.z = -std::sin(p*DEG2RAD);
-            DEBUG_OUTPUT(std::cout << "dbm debug: raxis = " << raxis <<  " pitch: " << p << std::endl);
-            loc.setAxisOfRotation(raxis);
+            yawAxis.x = 0;
+            yawAxis.y = std::cos(p*DEG2RAD);
+            yawAxis.z = -std::sin(p*DEG2RAD);
+            loc.setAxisOfRotation(yawAxis);
             loc.setAngularSpeed(buttonev->mPressed?amount:0);
             loc.setVelocity(Vector3f(0,0,0));
             break;

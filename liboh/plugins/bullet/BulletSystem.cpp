@@ -364,7 +364,8 @@ bool BulletSystem::tick() {
         if ((now-starttime) > 10.0) {
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->active) {
-                    if (objects[i]->meshptr->getPosition() != objects[i]->getBulletState().p) {
+                    if (objects[i]->meshptr->getPosition() != objects[i]->getBulletState().p ||
+                        objects[i]->meshptr->getOrientation() != objects[i]->getBulletState().o) {
                         /// if object has been moved, reset bullet position accordingly
                         DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->name << " moved by user!"
                                      << " meshpos: " << objects[i]->meshptr->getPosition()
