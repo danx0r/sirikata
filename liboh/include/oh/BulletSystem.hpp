@@ -256,7 +256,6 @@ public:
 
 
 typedef tr1::shared_ptr<ProxyMeshObject> ProxyMeshObjectPtr;
-//vector<ProxyMeshObjectPtr>mymesh;
 
 struct positionOrientation {
     Vector3d p;
@@ -315,6 +314,9 @@ public:
     float sizeX;
     float sizeY;
     float sizeZ;
+    string name;
+    int colMask;
+    int colMsg;
 
     /// public methods
     bulletObj(BulletSystem* sys) :
@@ -328,7 +330,8 @@ public:
             colShape(NULL),
             sizeX(0),
             sizeY(0),
-            sizeZ(0) {
+            sizeZ(0),
+            name("") {
         system = sys;
         indexarray=0;
     }
@@ -337,6 +340,20 @@ public:
     void setBulletState(positionOrientation pq);
     void buildBulletBody(const unsigned char*, int);
     void buildBulletShape(const unsigned char* meshdata, int meshbytes, float& mass);
+};
+
+Task::AbsTime bugtimestart=Task::AbsTime::now();
+
+class customDispatch :public btCollisionDispatcher {
+    /// the entire point of this subclass is to flag collisions in collisionPairs
+public:
+    map<btCollisionObject*, bulletObj*>* bt2siri;
+    map<set<bulletObj*>, int> collisionPairs;
+    customDispatch (btCollisionConfiguration* collisionConfiguration,
+                    map<btCollisionObject*, bulletObj*>* bt2siri) :
+            btCollisionDispatcher(collisionConfiguration) {
+        this->bt2siri=bt2siri;
+    }
 };
 
 class BulletSystem: public TimeSteppedSimulation {
@@ -350,7 +367,7 @@ class BulletSystem: public TimeSteppedSimulation {
 
     ///local bullet stuff:
     btDefaultCollisionConfiguration* collisionConfiguration;
-    btCollisionDispatcher* dispatcher;
+    customDispatch* dispatcher;
     btAxisSweep3* overlappingPairCache;
     btSequentialImpulseConstraintSolver* solver;
     btCollisionShape* groundShape;
@@ -358,6 +375,7 @@ class BulletSystem: public TimeSteppedSimulation {
 
 public:
     BulletSystem();
+    map<btCollisionObject*, bulletObj*> bt2siri;  /// map bullet bodies (what we get in the callbacks) to bulletObj's
     btDiscreteDynamicsWorld* dynamicsWorld;
     vector<bulletObj*>objects;
 //    btAlignedObjectArray<btCollisionShape*> collisionShapes;
