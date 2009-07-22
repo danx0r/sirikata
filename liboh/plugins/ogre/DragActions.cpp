@@ -184,7 +184,7 @@ public:
         Task::AbsTime now = Task::AbsTime::now();
     
         /// dbm new way: ignore camera, just move along global axes
-        Vector3d toMove;
+        Vector3d toMove(0,0,0);
         double sensitivity = 10.0;
         if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) sensitivity = 2.5;
         if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT &&
