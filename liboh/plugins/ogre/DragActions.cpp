@@ -176,36 +176,44 @@ public:
         SILOG(input,insane,"moveSelection: Moving selected objects at distance " << mMoveVector);
     }
     void mouseMoved(MouseDragEventPtr ev) {
-		std::cout << "MOVE: mX = "<<ev->mX<<"; mY = "<<ev->mY<<". mXStart = "<< ev->mXStart<<"; mYStart = "<<ev->mYStart<<std::endl;
+        std::cout << "MOVE: mX = "<<ev->mX<<"; mY = "<<ev->mY<<". mXStart = "<< ev->mXStart<<"; mYStart = "<<ev->mYStart<<std::endl;
         if (mSelectedObjects.empty()) {
             SILOG(input,insane,"moveSelection: Found no selected objects");
             return;
         }
         Task::AbsTime now = Task::AbsTime::now();
-        Location cameraLoc = camera->getProxy().globalLocation(now);
-        Vector3f cameraAxis = -cameraLoc.getOrientation().zAxis();
-
-        Vector3d startAxis (pixelToDirection(camera, cameraLoc.getOrientation(), ev->mXStart, ev->mYStart));
-        Vector3d endAxis (pixelToDirection(camera, cameraLoc.getOrientation(), ev->mX, ev->mY));
-        Vector3d start, end;
-        if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT)) {
-            start = startAxis.normal() * (mMoveVector.y/startAxis.y);
-            end = endAxis.normal() * (mMoveVector.y/endAxis.y);
-        } else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
-            start = startAxis.normal() * (mMoveVector.z/startAxis.z);
-            end = endAxis.normal() * (mMoveVector.z/endAxis.z);
-        } else {
+    
+        /// dbm new way: ignore camera, just move along global axes
+        Vector3d toMove;
+        double sensitivity = 10.0;
+        if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_ALT)) sensitivity = 2.5;
+        if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT &&
+                mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL))) {
+            toMove.y = ev->deltaY()*sensitivity;
+        }
+        else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_SHIFT)) {
+            toMove.x = ev->deltaX()*sensitivity;
+        }
+        else if (mParent->getInputManager()->isModifierDown(InputDevice::MOD_CTRL)) {
+            toMove.z = ev->deltaX()*sensitivity;
+        }
+        else {
+            Location cameraLoc = camera->getProxy().globalLocation(now);
+            Vector3f cameraAxis = -cameraLoc.getOrientation().zAxis();
+    
+            Vector3d startAxis (pixelToDirection(camera, cameraLoc.getOrientation(), ev->mXStart, ev->mYStart));
+            Vector3d endAxis (pixelToDirection(camera, cameraLoc.getOrientation(), ev->mX, ev->mY));
+            Vector3d start, end;
             float moveDistance = mMoveVector.dot(Vector3d(cameraAxis));
             start = startAxis * moveDistance; // / cameraAxis.dot(startAxis);
             end = endAxis * moveDistance; // / cameraAxis.dot(endAxis);
+            toMove = (end - start);
+            // Prevent moving outside of a small radius so you don't shoot an object into the horizon.
+            if (toMove.length() > 10*mParent->getInputManager()->mWorldScale->as<float>()) {
+                // moving too much.
+                toMove *= (10*mParent->getInputManager()->mWorldScale->as<float>()/toMove.length());
+            }
         }
-        Vector3d toMove (end - start);
-		// Prevent moving outside of a small radius so you don't shoot an object into the horizon.
-		if (toMove.length() > 10*mParent->getInputManager()->mWorldScale->as<float>()) {
-			// moving too much.
-			toMove *= (10*mParent->getInputManager()->mWorldScale->as<float>()/toMove.length());
-		}
-        SILOG(input,debug,"Start "<<start<<"; End "<<end<<"; toMove "<<toMove);
         for (size_t i = 0; i < mSelectedObjects.size(); ++i) {
             Location toSet (mSelectedObjects[i]->extrapolateLocation(now));
             SILOG(input,debug,"moveSelection: OLD " << toSet.getPosition());
