@@ -516,8 +516,9 @@ private:
         }
         return EventResponse::nop();
     }
-
+    
     EventResponse moveHandler(EventPtr ev) {
+        Vector3f raxis;
         float WORLD_SCALE = mParent->mInputManager->mWorldScale->as<float>();
         Task::AbsTime now(Task::AbsTime::now());
         std::tr1::shared_ptr<ButtonEvent> buttonev (
@@ -556,8 +557,13 @@ private:
         case SDL_SCANCODE_RIGHT:
             amount*=-1;
         case SDL_SCANCODE_LEFT:
-            amount*=2;
-            loc.setAxisOfRotation(Vector3f(0,1,0));
+            //amount*=2;
+            raxis = loc.getOrientation().yAxis();
+            raxis.x *= -1;
+            raxis.z *= -1;
+            std::cout << "dbm debug: raxis = " << raxis << std::endl;
+            //loc.setAxisOfRotation(Vector3f(0,1,0));
+            loc.setAxisOfRotation(raxis);
             loc.setAngularSpeed(buttonev->mPressed?amount:0);
             loc.setVelocity(Vector3f(0,0,0));
             break;
