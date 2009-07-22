@@ -558,10 +558,12 @@ private:
             amount*=-1;
         case SDL_SCANCODE_LEFT:
             //amount*=2;
-            raxis = loc.getOrientation().yAxis();
-            raxis.x *= -1;
-            raxis.z *= -1;
-            std::cout << "dbm debug: raxis = " << raxis << std::endl;
+            double p, r, y;
+            quat2Euler(loc.getOrientation(), p, r, y);
+            raxis.x = 0;
+            raxis.y = std::cos(p*DEG2RAD);
+            raxis.z = -std::sin(p*DEG2RAD);
+            std::cout << "dbm debug: raxis = " << raxis <<  " pitch: " << p << std::endl;
             //loc.setAxisOfRotation(Vector3f(0,1,0));
             loc.setAxisOfRotation(raxis);
             loc.setAngularSpeed(buttonev->mPressed?amount:0);
