@@ -281,11 +281,11 @@ class bulletObj : public MeshListener,Noncopyable {
     void setScale (const Vector3f &newScale);
 
     /// these guys seem to need to stay around for the lifetime of the object.  Otherwise we crash
-    btScalar* btVertices;//<-- this dude must be aligned on 16 byte boundaries
-    vector<double> vertices;
-    vector<int> indices;
-    btTriangleIndexVertexArray* indexarray;
-    btDefaultMotionState* myMotionState;
+    btScalar* mBtVertices;//<-- this dude must be aligned on 16 byte boundaries
+    vector<double> mVertices;
+    vector<int> mIndices;
+    btTriangleIndexVertexArray* mIndexArray;
+    btDefaultMotionState* mMotionState;
 public:
     enum mode {
         Disabled,               /// non-active, remove from physics
@@ -298,7 +298,7 @@ public:
         ShapeBox,
         ShapeSphere
     };
-    /// public members (please, let's not go on about settrs & gettrs -- unnecessary here)
+    /// public members -- yes, I use 'em
     float density;
     float friction;
     float bounce;
@@ -320,9 +320,9 @@ public:
 
     /// public methods
     bulletObj(BulletSystem* sys) :
-            btVertices(NULL),
-            indexarray(NULL),
-            myMotionState(NULL),
+            mBtVertices(NULL),
+            mIndexArray(NULL),
+            mMotionState(NULL),
             active(false),
             dynamic(false),
             velocity(Vector3d()),
@@ -333,7 +333,6 @@ public:
             sizeZ(0),
             name("") {
         system = sys;
-        indexarray=0;
     }
     ~bulletObj();
     positionOrientation getBulletState();
@@ -359,11 +358,10 @@ class BulletSystem: public TimeSteppedSimulation {
                     const String&options);
     Vector3d gravity;
     double groundlevel;
-    OptionValue* tempTferManager;
-    OptionValue* workQueue;
-    OptionValue* eventManager;
-    //Task::AbsTime starttime;
-    Task::AbsTime starttime;
+    OptionValue* mTempTferManager;
+    OptionValue* mWorkQueue;
+    OptionValue* mEventManager;
+    Task::AbsTime mStartTime;
     
     ///local bullet stuff:
     btDefaultCollisionConfiguration* collisionConfiguration;

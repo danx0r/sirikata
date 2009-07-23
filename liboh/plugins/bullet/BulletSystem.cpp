@@ -193,34 +193,34 @@ void bulletObj::buildBulletShape(const unsigned char* meshdata, int meshbytes, f
         /// create a mesh-based static (not dynamic ie forces, though kinematic, ie movable) object
         /// assuming !dynamic; in future, may support dynamic mesh through gimpact collision
         vector<double> bounds;
-        if (btVertices)
-            btAlignedFree(btVertices);
-        btVertices=NULL;
+        if (mBtVertices)
+            btAlignedFree(mBtVertices);
+        mBtVertices=NULL;
         unsigned int i,j;
 
         if (meshbytes) {
-            vertices.clear();
-            indices.clear();
+            mVertices.clear();
+            mIndices.clear();
             parseOgreMesh parser;
-            parser.parseData(meshdata, meshbytes, vertices, indices, bounds);
+            parser.parseData(meshdata, meshbytes, mVertices, mIndices, bounds);
         }
-        DEBUG_OUTPUT (cout << "dbm:mesh " << vertices.size() << " vertices:" << endl);
-        btVertices=(btScalar*)btAlignedAlloc(vertices.size()/3*sizeof(btScalar)*4,16);
-        for (i=0; i<vertices.size()/3; i+=1) {
+        DEBUG_OUTPUT (cout << "dbm:mesh " << mVertices.size() << " vertices:" << endl);
+        mBtVertices=(btScalar*)btAlignedAlloc(mVertices.size()/3*sizeof(btScalar)*4,16);
+        for (i=0; i<mVertices.size()/3; i+=1) {
             DEBUG_OUTPUT ( cout << "dbm:mesh");
             for (j=0; j<3; j+=1) {
-                DEBUG_OUTPUT (cout <<" " << vertices[i*3+j]);
+                DEBUG_OUTPUT (cout <<" " << mVertices[i*3+j]);
             }
-            btVertices[i*4]=vertices[i*3]*sizeX;
-            btVertices[i*4+1]=vertices[i*3+1]*sizeY;
-            btVertices[i*4+2]=vertices[i*3+2]*sizeZ;
-            btVertices[i*4+3]=1;
+            mBtVertices[i*4]=mVertices[i*3]*sizeX;
+            mBtVertices[i*4+1]=mVertices[i*3+1]*sizeY;
+            mBtVertices[i*4+2]=mVertices[i*3+2]*sizeZ;
+            mBtVertices[i*4+3]=1;
             DEBUG_OUTPUT (cout << endl);
         }
         DEBUG_OUTPUT (cout << endl);
-        DEBUG_OUTPUT (cout << "dbm:mesh " << indices.size() << " indices:");
-        for (i=0; i<indices.size(); i++) {
-            DEBUG_OUTPUT (cout << " " << indices[i]);
+        DEBUG_OUTPUT (cout << "dbm:mesh " << mIndices.size() << " indices:");
+        for (i=0; i<mIndices.size(); i++) {
+            DEBUG_OUTPUT (cout << " " << mIndices[i]);
         }
         DEBUG_OUTPUT (cout << endl);
         DEBUG_OUTPUT (cout << "dbm:mesh bounds:");
@@ -229,27 +229,27 @@ void bulletObj::buildBulletShape(const unsigned char* meshdata, int meshbytes, f
         }
         DEBUG_OUTPUT (cout << endl);
 
-        if (indexarray) delete indexarray;
-        indexarray = new btTriangleIndexVertexArray(
-            indices.size()/3,                       // # of triangles (int)
-            &(indices[0]),                          // ptr to list of indices (int)
+        if (mIndexArray) delete mIndexArray;
+        mIndexArray = new btTriangleIndexVertexArray(
+            mIndices.size()/3,                       // # of triangles (int)
+            &(mIndices[0]),                          // ptr to list of indices (int)
             sizeof(int)*3,                          // index stride, in bytes (typically 3X sizeof(int) = 12
-            vertices.size()/3,                      // # of vertices (int)
-            btVertices,         // (btScalar*) pointer to vertex list
+            mVertices.size()/3,                      // # of vertices (int)
+            mBtVertices,         // (btScalar*) pointer to vertex list
             sizeof(btScalar)*4);                     // vertex stride, in bytes
         btVector3 aabbMin(-10000,-10000,-10000),aabbMax(10000,10000,10000);
-        colShape  = new btBvhTriangleMeshShape(indexarray,false, aabbMin, aabbMax);
+        colShape  = new btBvhTriangleMeshShape(mIndexArray,false, aabbMin, aabbMax);
         DEBUG_OUTPUT(cout << "dbm: shape=trimesh colShape: " << colShape <<
-                     " triangles: " << indices.size()/3 << " verts: " << vertices.size()/3 << endl);
+                     " triangles: " << mIndices.size()/3 << " verts: " << mVertices.size()/3 << endl);
         mass = 0.0;
     }
 }
 bulletObj::~bulletObj() {
     DEBUG_OUTPUT(cout << "dbm: bulletObj destructor " << this << endl);
-    if (btVertices!=NULL)
-        btAlignedFree(btVertices);
-    if (myMotionState!=NULL) delete myMotionState;
-    if (indexarray!=NULL) delete indexarray;
+    if (mBtVertices!=NULL)
+        btAlignedFree(mBtVertices);
+    if (mMotionState!=NULL) delete mMotionState;
+    if (mIndexArray!=NULL) delete mIndexArray;
     if (colShape!=NULL) delete colShape;
     if (bulletBodyPtr!=NULL) delete bulletBodyPtr;
 }
@@ -270,8 +270,8 @@ void bulletObj::buildBulletBody(const unsigned char* meshdata, int meshbytes) {
     startTransform.setIdentity();
     startTransform.setOrigin(btVector3(initialPo.p.x, initialPo.p.y, initialPo.p.z));
     startTransform.setRotation(btQuaternion(initialPo.o.x, initialPo.o.y, initialPo.o.z, initialPo.o.w));
-    myMotionState = new btDefaultMotionState(startTransform);
-    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,colShape,localInertia);
+    mMotionState = new btDefaultMotionState(startTransform);
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,mMotionState,colShape,localInertia);
     body = new btRigidBody(rbInfo);
     body->setFriction(friction);
     body->setRestitution(bounce);
@@ -347,23 +347,23 @@ void BulletSystem::removePhysicalObject(bulletObj* obj) {
 }
 
 bool BulletSystem::tick() {
-    static Task::AbsTime lasttime = starttime;
+    static Task::AbsTime lasttime = mStartTime;
     static Task::DeltaTime waittime = Task::DeltaTime::seconds(0.02);
     static int mode = 0;
     Task::AbsTime now = Task::AbsTime::now();
     Task::DeltaTime delta;
     positionOrientation po;
 
-    DEBUG_OUTPUT(cout << "dbm: BulletSystem::tick time: " << (now-starttime).toSeconds() << endl;)
+    DEBUG_OUTPUT(cout << "dbm: BulletSystem::tick time: " << (now-mStartTime).toSeconds() << endl;)
     if (now > lasttime + waittime) {
         delta = now-lasttime;
         if (delta.toSeconds() > 0.05) delta = delta.seconds(0.05);           /// avoid big time intervals, they are trubble
         lasttime = now;
-        if ((now-starttime) > 10.0) {
+        if ((now-mStartTime) > 10.0) {
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->active) {
                     if (objects[i]->meshptr->getPosition() != objects[i]->getBulletState().p ||
-                        objects[i]->meshptr->getOrientation() != objects[i]->getBulletState().o) {
+                            objects[i]->meshptr->getOrientation() != objects[i]->getBulletState().o) {
                         /// if object has been moved, reset bullet position accordingly
                         DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->name << " moved by user!"
                                      << " meshpos: " << objects[i]->meshptr->getPosition()
@@ -394,7 +394,7 @@ bool BulletSystem::tick() {
                 bulletObj* b0=*j++;
                 bulletObj* b1=*j;
                 if (i->second==1) {             /// recently colliding; send msg & change mode
-                    cout << "collision time: " << (Task::AbsTime::now()-starttime).toSeconds() << endl;
+                    cout << "collision time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     if (b1->colMsg & b0->colMask) {
                         cout << "   begin collision msg: " << b0->name << " --> " << b1->name << endl;
                     }
@@ -404,15 +404,15 @@ bool BulletSystem::tick() {
                     dispatcher->collisionPairs[i->first]=2;
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
-                    cout << "collision time: " << (Task::AbsTime::now()-starttime).toSeconds() << endl;
+                    cout << "collision time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     if (b1->colMsg & b0->colMask) {
                         cout << "   end collision msg: " << b0->name << " --> " << b1->name << endl;
                     }
                     if (b0->colMsg & b1->colMask) {
                         cout << "   end collision msg: " << b1->name << " --> " << b0->name << endl;
                     }
-					map<set<bulletObj*>, int>::iterator temp = i++;			///	(sigh) rage against the machine
-					dispatcher->collisionPairs.erase(temp);
+                    map<set<bulletObj*>, int>::iterator temp = i++;   /// (sigh) rage against the machine
+                    dispatcher->collisionPairs.erase(temp);
                     if (i==dispatcher->collisionPairs.end()) break;
                 }
                 else if (i->second==3) {        /// re-flagged, so still colliding. clear flag
@@ -472,19 +472,19 @@ void customNearCallback(btBroadphasePair& collisionPair, btCollisionDispatcher& 
 bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, const String&options) {
     DEBUG_OUTPUT(cout << "dbm: BulletSystem::initialize options: " << options << endl);
     /// HelloWorld from Bullet/Demos
-    tempTferManager = new OptionValue("transfermanager","0", OptionValueType<void*>(),"dummy");
-    workQueue = new OptionValue("workqueue","0",OptionValueType<void*>(),"Memory address of the WorkQueue");
-    eventManager = new OptionValue("eventmanager","0",OptionValueType<void*>(),"Memory address of the EventManager<Event>");
-    InitializeClassOptions("bulletphysics",this, tempTferManager, workQueue, eventManager, NULL);
+    mTempTferManager = new OptionValue("transfermanager","0", OptionValueType<void*>(),"dummy");
+    mWorkQueue = new OptionValue("workqueue","0",OptionValueType<void*>(),"Memory address of the WorkQueue");
+    mEventManager = new OptionValue("eventmanager","0",OptionValueType<void*>(),"Memory address of the EventManager<Event>");
+    InitializeClassOptions("bulletphysics",this, mTempTferManager, mWorkQueue, mEventManager, NULL);
     OptionSet::getOptions("bulletphysics",this)->parse(options);
-    Transfer::TransferManager* tm = (Transfer::TransferManager*)tempTferManager->as<void*>();
+    Transfer::TransferManager* tm = (Transfer::TransferManager*)mTempTferManager->as<void*>();
     this->transferManager = tm;
 
     gravity = Vector3d(0, -9.8, 0);
     //groundlevel = 3044.0;
     groundlevel = 0.0;
     btTransform groundTransform;
-    btDefaultMotionState* myMotionState;
+    btDefaultMotionState* mMotionState;
     btVector3 worldAabbMin(-10000,-10000,-10000);
     btVector3 worldAabbMax(10000,10000,10000);
     int maxProxies = 1024;
@@ -506,8 +506,8 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     groundTransform.setIdentity();
     groundTransform.setOrigin(btVector3(0,groundlevel-1,0));
     groundShape->calculateLocalInertia(0.0f,localInertia);
-    myMotionState = new btDefaultMotionState(groundTransform);
-    btRigidBody::btRigidBodyConstructionInfo rbInfo(0.0f,myMotionState,groundShape,localInertia);
+    mMotionState = new btDefaultMotionState(groundTransform);
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(0.0f,mMotionState,groundShape,localInertia);
     groundBody = new btRigidBody(rbInfo);
     groundBody->setRestitution(0.5);                 /// bouncy for fun & profit
     dynamicsWorld->addRigidBody(groundBody);
@@ -515,14 +515,13 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     proxyManager->addListener(this);
     DEBUG_OUTPUT(cout << "dbm: BulletSystem::initialized, including test bullet object" << endl);
     /// we don't delete these, the ProxyManager does (I think -- someone does anyway)
-//    delete tempTferManager;
-//    delete workQueue;
-//    delete eventManager;
+//    delete mTempTferManager;
+//    delete mWorkQueue;
+//    delete mEventManager;
     return true;
 }
 
-BulletSystem::BulletSystem() :             starttime(Task::AbsTime::now())
-{
+BulletSystem::BulletSystem() :             mStartTime(Task::AbsTime::now()) {
     DEBUG_OUTPUT(cout << "dbm: I am the BulletSystem constructor!" << endl);
 }
 
