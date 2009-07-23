@@ -292,22 +292,22 @@ class bulletObj : public MeshListener,Noncopyable {
     vector<int> mIndices;
     btTriangleIndexVertexArray* mIndexArray;
     btDefaultMotionState* mMotionState;
-    float density;
-    float friction;
-    float bounce;
-    bool active;              /// anything that bullet sees is active
-    bool dynamic;             /// but only some are dynamic (affected by forces)
-    shapeID shape;
-    positionOrientation initialPo;
-    Vector3d velocity;
-    btRigidBody* bulletBodyPtr;
-    btCollisionShape* colShape;
-    ProxyMeshObjectPtr meshptr;
-    URI meshname;
-    float sizeX;
-    float sizeY;
-    float sizeZ;
-    string name;
+    float mDensity;
+    float mFriction;
+    float mBounce;
+    bool mActive;              /// anything that bullet sees is active
+    bool mDynamic;             /// but only some are dynamic (affected by forces)
+    shapeID mShape;
+    positionOrientation mInitialPo;
+    Vector3d mVelocity;
+    btRigidBody* mBulletBodyPtr;
+    btCollisionShape* mColShape;
+    ProxyMeshObjectPtr mMeshptr;
+    URI mMeshname;
+    float mSizeX;
+    float mSizeY;
+    float mSizeZ;
+    string mName;
 public:
     /// public members -- yes, I use 'em.  No, I don't always thicken my code with gettr/settr's
     int colMask;
@@ -324,15 +324,15 @@ public:
             mBtVertices(NULL),
             mIndexArray(NULL),
             mMotionState(NULL),
-            active(false),
-            dynamic(false),
-            velocity(Vector3d()),
-            bulletBodyPtr(NULL),
-            colShape(NULL),
-            sizeX(0),
-            sizeY(0),
-            sizeZ(0),
-            name("") {
+            mActive(false),
+            mDynamic(false),
+            mVelocity(Vector3d()),
+            mBulletBodyPtr(NULL),
+            mColShape(NULL),
+            mSizeX(0),
+            mSizeY(0),
+            mSizeZ(0),
+            mName("") {
         system = sys;
     }
     ~bulletObj();
