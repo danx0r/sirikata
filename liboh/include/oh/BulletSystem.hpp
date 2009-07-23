@@ -309,16 +309,16 @@ class bulletObj : public MeshListener,Noncopyable {
     float sizeZ;
     string name;
 public:
+    /// public members -- yes, I use 'em.  No, I don't always thicken my code with gettr/settr's
     int colMask;
     int colMsg;
+
     enum mode {
         Disabled,               /// non-active, remove from physics
         Static,                 /// collisions, no dynamic movement (bullet mass==0)
         DynamicBox,                 /// fully physical -- collision & dynamics
         DynamicSphere                 /// fully physical -- collision & dynamics
     };
-    /// public members -- yes, I use 'em
-
     /// public methods
     bulletObj(BulletSystem* sys) :
             mBtVertices(NULL),
