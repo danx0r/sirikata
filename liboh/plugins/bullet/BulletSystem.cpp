@@ -393,22 +393,24 @@ bool BulletSystem::tick() {
                 bulletObj* b0=*j++;
                 bulletObj* b1=*j;
                 if (i->second==1) {             /// recently colliding; send msg & change mode
-                    cout << "collision time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     if (b1->colMsg & b0->colMask) {
-                        cout << "   begin collision msg: " << b0->mName << " --> " << b1->mName << endl;
+                        cout << "   begin collision msg: " << b0->mName << " --> " << b1->mName
+                                << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     }
                     if (b0->colMsg & b1->colMask) {
-                        cout << "   begin collision msg: " << b1->mName << " --> " << b0->mName << endl;
+                        cout << "   begin collision msg: " << b1->mName << " --> " << b0->mName
+                                << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     }
                     dispatcher->collisionPairs[i->first]=2;
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
-                    cout << "collision time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     if (b1->colMsg & b0->colMask) {
-                        cout << "   end collision msg: " << b0->mName << " --> " << b1->mName << endl;
+                        cout << "     end collision msg: " << b0->mName << " --> " << b1->mName
+                                << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     }
                     if (b0->colMsg & b1->colMask) {
-                        cout << "   end collision msg: " << b1->mName << " --> " << b0->mName << endl;
+                        cout << "     end collision msg: " << b1->mName << " --> " << b0->mName
+                                << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     }
                     map<set<bulletObj*>, int>::iterator temp = i++;   /// (sigh) rage against the machine
                     dispatcher->collisionPairs.erase(temp);
