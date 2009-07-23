@@ -248,7 +248,6 @@ public:
     }
     void mouseMoved(MouseDragEventPtr ev) {
         Task::AbsTime now(Task::AbsTime::now());
-        // one screen width = one full rotation
         Location cameraLoc = camera->getProxy().globalLocation(now);
         Vector3f cameraAxis = -cameraLoc.getOrientation().zAxis();
         float radianX = 0;
@@ -312,21 +311,49 @@ class ScaleObjectDrag : public RelativeDrag {
     OgreSystem *mParent;
     std::vector<ProxyPositionObjectPtr> mSelectedObjects;
     float dragMultiplier;
+    std::vector<Vector3d> mOriginalPosition;
+    float mTotalScale;
+    CameraEntity *camera;
 public:
     ScaleObjectDrag(const DragStartInfo &info)
-        : RelativeDrag(info.ev->getDevice()),
-          mParent (info.sys),
-          mSelectedObjects (info.objects.begin(), info.objects.end()) {
+            : RelativeDrag(info.ev->getDevice()),
+            mParent (info.sys),
+            mTotalScale(1.0),
+            mSelectedObjects (info.objects.begin(), info.objects.end()) {
+        camera = info.camera;
+        mOriginalPosition.reserve(mSelectedObjects.size());
+        Task::AbsTime now = Task::AbsTime::now();
+        for (size_t i = 0; i < mSelectedObjects.size(); ++i) {
+            Location currentLoc = mSelectedObjects[i]->extrapolateLocation(now);
+            mOriginalPosition.push_back(currentLoc.getPosition());
+        }
         dragMultiplier = mParent->getInputManager()->mDragMultiplier->as<float>();
     }
     void mouseMoved(MouseDragEventPtr ev) {
+        Task::AbsTime now(Task::AbsTime::now());
+        Vector3d avgPos(0,0,0);
         if (ev->deltaLastY() != 0) {
             float scaleamt = exp(dragMultiplier*ev->deltaLastY());
+            mTotalScale *= scaleamt;
+            for (size_t i = 0; i< mSelectedObjects.size(); ++i) {
+                const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
+                if (!ent) {
+                    continue;
+                }
+                Location loc (ent->extrapolateLocation(now));
+                avgPos += loc.getPosition();
+            }
+            avgPos /= mSelectedObjects.size();
             for (size_t i = 0; i < mSelectedObjects.size(); ++i) {
                 const ProxyPositionObjectPtr &ent = mSelectedObjects[i];
                 if (!ent) {
                     continue;
                 }
+                Location loc (ent->extrapolateLocation(now));
+                Vector3d localTrans = mOriginalPosition[i] - avgPos;
+                loc.setPosition(avgPos + localTrans*mTotalScale);
+                std::cout << "debug avgPos: " << avgPos << " localTrans" << localTrans << " scale: " << mTotalScale << std::endl;
+                ent->resetPositionVelocity(now, loc);
                 std::tr1::shared_ptr<ProxyMeshObject> meshptr (
                     std::tr1::dynamic_pointer_cast<ProxyMeshObject>(ent));
                 if (meshptr) {
