@@ -275,6 +275,12 @@ struct positionOrientation {
 class BulletSystem;
 
 class bulletObj : public MeshListener,Noncopyable {
+    friend class BulletSystem;
+    enum shapeID {
+        ShapeMesh,
+        ShapeBox,
+        ShapeSphere
+    };
     BulletSystem* system;
     void setPhysical (const physicalParameters &pp);
     void meshChanged (const URI &newMesh);
@@ -286,19 +292,6 @@ class bulletObj : public MeshListener,Noncopyable {
     vector<int> mIndices;
     btTriangleIndexVertexArray* mIndexArray;
     btDefaultMotionState* mMotionState;
-public:
-    enum mode {
-        Disabled,               /// non-active, remove from physics
-        Static,                 /// collisions, no dynamic movement (bullet mass==0)
-        DynamicBox,                 /// fully physical -- collision & dynamics
-        DynamicSphere                 /// fully physical -- collision & dynamics
-    };
-    enum shapeID {
-        ShapeMesh,
-        ShapeBox,
-        ShapeSphere
-    };
-    /// public members -- yes, I use 'em
     float density;
     float friction;
     float bounce;
@@ -315,8 +308,16 @@ public:
     float sizeY;
     float sizeZ;
     string name;
+public:
     int colMask;
     int colMsg;
+    enum mode {
+        Disabled,               /// non-active, remove from physics
+        Static,                 /// collisions, no dynamic movement (bullet mass==0)
+        DynamicBox,                 /// fully physical -- collision & dynamics
+        DynamicSphere                 /// fully physical -- collision & dynamics
+    };
+    /// public members -- yes, I use 'em
 
     /// public methods
     bulletObj(BulletSystem* sys) :
@@ -362,7 +363,7 @@ class BulletSystem: public TimeSteppedSimulation {
     OptionValue* mWorkQueue;
     OptionValue* mEventManager;
     Task::AbsTime mStartTime;
-    
+
     ///local bullet stuff:
     btDefaultCollisionConfiguration* collisionConfiguration;
     customDispatch* dispatcher;
