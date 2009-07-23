@@ -347,8 +347,6 @@ void BulletSystem::removePhysicalObject(bulletObj* obj) {
 }
 
 bool BulletSystem::tick() {
-    //static Task::AbsTime starttime = Task::AbsTime::now();
-    static Task::AbsTime starttime = bugtimestart;
     static Task::AbsTime lasttime = starttime;
     static Task::DeltaTime waittime = Task::DeltaTime::seconds(0.02);
     static int mode = 0;
@@ -396,7 +394,7 @@ bool BulletSystem::tick() {
                 bulletObj* b0=*j++;
                 bulletObj* b1=*j;
                 if (i->second==1) {             /// recently colliding; send msg & change mode
-                    cout << "collision time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() << endl;
+                    cout << "collision time: " << (Task::AbsTime::now()-starttime).toSeconds() << endl;
                     if (b1->colMsg & b0->colMask) {
                         cout << "   begin collision msg: " << b0->name << " --> " << b1->name << endl;
                     }
@@ -406,7 +404,7 @@ bool BulletSystem::tick() {
                     dispatcher->collisionPairs[i->first]=2;
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
-                    cout << "collision time: " << (Task::AbsTime::now()-bugtimestart).toSeconds() << endl;
+                    cout << "collision time: " << (Task::AbsTime::now()-starttime).toSeconds() << endl;
                     if (b1->colMsg & b0->colMask) {
                         cout << "   end collision msg: " << b0->name << " --> " << b1->name << endl;
                     }
@@ -523,29 +521,14 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     return true;
 }
 
-BulletSystem::BulletSystem() {
-    DEBUG_OUTPUT(cout << "dbm: I am the BulletSystem constructor!" << endl;)
+BulletSystem::BulletSystem() :             starttime(Task::AbsTime::now())
+{
+    DEBUG_OUTPUT(cout << "dbm: I am the BulletSystem constructor!" << endl);
 }
 
 BulletSystem::~BulletSystem() {
     DEBUG_OUTPUT(cout << "dbm: BulletSystem destructor" << endl);
 
-    /* ///Bullet tutorial way -- but we keep track ourselves in bulletObj
-    for (int i=dynamicsWorld->getNumCollisionObjects()-1; i>=0 ;i--) {
-        btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
-        btRigidBody* body = btRigidBody::upcast(obj);
-        if (body && body->getMotionState()) {
-            delete body->getMotionState();
-        }
-        dynamicsWorld->removeCollisionObject( obj );
-        delete obj;
-    }
-    for (int j=0;j<collisionShapes.size();j++) {
-        btCollisionShape* shape = collisionShapes[j];
-        collisionShapes[j] = 0;
-        delete shape;
-    }
-    */
     delete dynamicsWorld;
     delete solver;
     delete overlappingPairCache;

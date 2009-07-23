@@ -342,8 +342,6 @@ public:
     void buildBulletShape(const unsigned char* meshdata, int meshbytes, float& mass);
 };
 
-Task::AbsTime bugtimestart=Task::AbsTime::now();
-
 class customDispatch :public btCollisionDispatcher {
     /// the entire point of this subclass is to flag collisions in collisionPairs
 public:
@@ -364,7 +362,9 @@ class BulletSystem: public TimeSteppedSimulation {
     OptionValue* tempTferManager;
     OptionValue* workQueue;
     OptionValue* eventManager;
-
+    //Task::AbsTime starttime;
+    Task::AbsTime starttime;
+    
     ///local bullet stuff:
     btDefaultCollisionConfiguration* collisionConfiguration;
     customDispatch* dispatcher;
