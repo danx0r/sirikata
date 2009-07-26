@@ -838,9 +838,11 @@ private:
             mDragAction[1] = DragActionRegistry::get("scaleObject");
             break;
         case SDL_SCANCODE_T:
+            mParent->mDisablePhysics=false;
             mDragAction[1] = DragActionRegistry::get("rotateCamera");
             break;
         case SDL_SCANCODE_Y:
+            mParent->mDisablePhysics=true;
             mDragAction[1] = DragActionRegistry::get("panCamera");
             break;
         }

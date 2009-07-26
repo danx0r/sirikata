@@ -81,7 +81,7 @@ Ogre::RenderTarget* OgreSystem::sRenderTarget=NULL;
 Ogre::Plugin*OgreSystem::sCDNArchivePlugin=NULL;
 std::list<OgreSystem*> OgreSystem::sActiveOgreScenes;
 uint32 OgreSystem::sNumOgreSystems=0;
-OgreSystem::OgreSystem():mLastFrameTime(Time::now()),mFloatingPointOffset(0,0,0),mPrimaryCamera(NULL)
+OgreSystem::OgreSystem():mLastFrameTime(Time::now()),mFloatingPointOffset(0,0,0),mPrimaryCamera(NULL),mDisablePhysics(false)
 {
     increfcount();
     mInternalCubeMap=NULL;
@@ -823,6 +823,13 @@ bool OgreSystem::renderOneFrame(Time curFrameTime, Duration deltaTime) {
     return continueRendering;
 }
 static Time debugStartTime = Time::now();
+
+std::string OgreSystem::getMsg() {
+    std::string s = std::string();
+    if (mDisablePhysics) s.append("disable_physics");
+    return s;
+}
+
 bool OgreSystem::tick(){
     GraphicsResourceManager::getSingleton().computeLoadedSet();
     Time curFrameTime(Time::now());
