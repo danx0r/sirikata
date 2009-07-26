@@ -523,6 +523,8 @@ private:
     }
     
     EventResponse moveHandler(EventPtr ev) {
+        float angSpeed;
+        Vector3f velocity;
         Vector3f yawAxis;
         float WORLD_SCALE = mParent->mInputManager->mWorldScale->as<float>();
         Task::AbsTime now(Task::AbsTime::now());
@@ -555,17 +557,45 @@ private:
         case SDL_SCANCODE_DOWN:
             amount*=-1;
         case SDL_SCANCODE_UP:
+            angSpeed = 0;
+            velocity = Vector3f(0,0,0);
+            /// fwd, but also if CTL: pan left, ALT: pan right
+            /// SHIFT: pan up, SHIFT+CTL: pan down
+            if (!mParent->mInputManager->isModifierDown(InputDevice::MOD_SHIFT)) {
+                if ( (mParent->mInputManager->isModifierDown(InputDevice::MOD_CTRL)) ||
+                        (mParent->mInputManager->isModifierDown(InputDevice::MOD_ALT)) ) {
+                    int oldamt = amount;
+                    if (mParent->mInputManager->isModifierDown(InputDevice::MOD_ALT)) {
+                        amount *= -1;
+                    }
+                    /// AngularSpeed needs a relative axis, so compute the global Y axis (yawAxis) in local frame
+                    double p, r, y;
+                    quat2Euler(loc.getOrientation(), p, r, y);
+                    yawAxis.x = 0;
+                    yawAxis.y = std::cos(p*DEG2RAD);
+                    yawAxis.z = -std::sin(p*DEG2RAD);
+                    loc.setAxisOfRotation(yawAxis);
+                    angSpeed=buttonev->mPressed?amount:0;
+                    amount = oldamt;
+                }
+            }
             amount *= 0.5;
             if (mParent->mInputManager->isModifierDown(InputDevice::MOD_SHIFT)) {
+                cout << "debug: SHIFT" << endl;
+                if (mParent->mInputManager->isModifierDown(InputDevice::MOD_CTRL)) {
+                    cout << "   debug: CTRL" << endl;
+                    amount *= -1;
+                }
                 loc.setAxisOfRotation(Vector3f(1,0,0));
-                loc.setAngularSpeed(buttonev->mPressed?amount:0);
-                loc.setVelocity(Vector3f(0,0,0));
+                angSpeed=buttonev->mPressed?amount:0;
+                cout << "         debug: button: " << buttonev->mPressed << " amt: " << amount << " angSpeed: " << angSpeed << endl;
             }
             else {
                 amount *= WORLD_SCALE;
-                loc.setVelocity(direction(orient)*amount);
-                loc.setAngularSpeed(0);
+                velocity = direction(orient)*amount;
             }
+            loc.setAngularSpeed(angSpeed);
+            loc.setVelocity(velocity);
             break;
         case SDL_SCANCODE_PAGEDOWN:
             amount*=-1;
@@ -850,6 +880,14 @@ private:
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, true, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, false, InputDevice::MOD_SHIFT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, true,
+                                       InputDevice::MOD_SHIFT|InputDevice::MOD_CTRL);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, false,
+                                       InputDevice::MOD_SHIFT|InputDevice::MOD_CTRL);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, true, InputDevice::MOD_ALT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, false, InputDevice::MOD_ALT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, true, InputDevice::MOD_CTRL);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_UP, false, InputDevice::MOD_CTRL);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_DOWN);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_DOWN, true, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_DOWN, false, InputDevice::MOD_SHIFT);
