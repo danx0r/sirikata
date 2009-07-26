@@ -579,17 +579,25 @@ private:
         case SDL_SCANCODE_RIGHT:
             amount*=-1;
         case SDL_SCANCODE_LEFT:
-            if (mParent->mInputManager->isModifierDown(InputDevice::MOD_SHIFT)) amount *= 0.25;
-            /// AngularSpeed needs a relative axis, so compute the global Y axis (yawAxis) in local frame
-            double p, r, y;
-            quat2Euler(loc.getOrientation(), p, r, y);
-            yawAxis.x = 0;
-            yawAxis.y = std::cos(p*DEG2RAD);
-            yawAxis.z = -std::sin(p*DEG2RAD);
-            loc.setAxisOfRotation(yawAxis);
-            loc.setAngularSpeed(buttonev->mPressed?amount:0);
-            loc.setVelocity(Vector3f(0,0,0));
-            break;
+            /// default: strafe.  SHIFT: pan (turn your head)
+            if (mParent->mInputManager->isModifierDown(InputDevice::MOD_SHIFT)) {
+                /// AngularSpeed needs a relative axis, so compute the global Y axis (yawAxis) in local frame
+                double p, r, y;
+                quat2Euler(loc.getOrientation(), p, r, y);
+                yawAxis.x = 0;
+                yawAxis.y = std::cos(p*DEG2RAD);
+                yawAxis.z = -std::sin(p*DEG2RAD);
+                loc.setAxisOfRotation(yawAxis);
+                loc.setAngularSpeed(buttonev->mPressed?amount:0);
+                loc.setVelocity(Vector3f(0,0,0));
+                break;
+            }
+            else {
+                amount *= WORLD_SCALE*-.25;
+                loc.setVelocity(orient.xAxis()*amount);
+                loc.setAngularSpeed(0);
+                break;
+            }
         default:
             break;
         }
@@ -849,7 +857,7 @@ private:
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_LEFT, true, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_LEFT, false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_RIGHT);
-                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_RIGHT, false, InputDevice::MOD_SHIFT);
+                registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_RIGHT, true, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_RIGHT, false, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_W,true, InputDevice::MOD_SHIFT);
                 registerButtonListener(ev->mDevice, &MouseHandler::moveHandler, SDL_SCANCODE_A,true, InputDevice::MOD_SHIFT);
