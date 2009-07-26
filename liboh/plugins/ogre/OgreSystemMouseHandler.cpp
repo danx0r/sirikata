@@ -838,12 +838,14 @@ private:
             mDragAction[1] = DragActionRegistry::get("scaleObject");
             break;
         case SDL_SCANCODE_T:
-            mParent->mDisablePhysics=false;
             mDragAction[1] = DragActionRegistry::get("rotateCamera");
             break;
         case SDL_SCANCODE_Y:
-            mParent->mDisablePhysics=true;
             mDragAction[1] = DragActionRegistry::get("panCamera");
+            break;
+        case SDL_SCANCODE_P:
+            /// not a dragmode, but whatever -- it does what we want
+            mParent->mDisablePhysics = !mParent->mDisablePhysics;
             break;
         }
         return EventResponse::nop();
@@ -918,6 +920,7 @@ private:
                 registerButtonListener(ev->mDevice, &MouseHandler::setDragMode, SDL_SCANCODE_R);
                 registerButtonListener(ev->mDevice, &MouseHandler::setDragMode, SDL_SCANCODE_T);
                 registerButtonListener(ev->mDevice, &MouseHandler::setDragMode, SDL_SCANCODE_Y);
+                registerButtonListener(ev->mDevice, &MouseHandler::setDragMode, SDL_SCANCODE_P);
             }
             break;
         case InputDeviceEvent::REMOVED: {
