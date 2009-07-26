@@ -242,7 +242,9 @@ private:
             return EventResponse::nop();
         }
         if (ev->mAxis == SDLMouse::WHEELY || ev->mAxis == SDLMouse::RELY) {
-            zoomInOut(ev->mValue, ev->getDevice(), mParent->mPrimaryCamera, mSelectedObjects, mParent);
+			AxisValue av = ev->mValue;
+			av.value *= 0.2;
+            zoomInOut(av, ev->getDevice(), mParent->mPrimaryCamera, mSelectedObjects, mParent);
         }
         else if (ev->mAxis == SDLMouse::WHEELX || ev->mAxis == PointerDevice::RELX) {
             //orbitObject(Vector3d(ev->mValue.getCentered() * AXIS_TO_RADIANS, 0, 0), ev->getDevice());

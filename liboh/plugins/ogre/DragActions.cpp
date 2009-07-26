@@ -432,6 +432,7 @@ void zoomInOut(AxisValue value, const InputDevicePtr &dev, CameraEntity *camera,
     if (!dev) {
         return;
     }
+	std::cout << "dbm debug: zoom: " << value.value << std::endl;
     SILOG(input,debug,"zoom "<<value);
 
     Task::AbsTime now = Task::AbsTime::now();
