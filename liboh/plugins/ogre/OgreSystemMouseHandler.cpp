@@ -975,9 +975,9 @@ public:
                               MouseDragEvent::getEventId(),
                               std::tr1::bind(&MouseHandler::doDrag, this, _1)));
         mDragAction[1] = 0;
-        mDragAction[2] = DragActionRegistry::get("zoomCamera");
-        mDragAction[3] = DragActionRegistry::get("panCamera");
-        mDragAction[4] = DragActionRegistry::get("rotateCamera");
+        mDragAction[2] = DragActionRegistry::get("panCamera");
+        mDragAction[3] = DragActionRegistry::get("rotateCamera");
+        mDragAction[4] = DragActionRegistry::get("zoomCamera");
 
         mEvents.push_back(mParent->mInputManager->subscribeId(
                               IdPair(MouseClickEvent::getEventId(),
