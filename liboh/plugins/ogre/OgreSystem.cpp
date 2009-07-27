@@ -81,7 +81,7 @@ Ogre::RenderTarget* OgreSystem::sRenderTarget=NULL;
 Ogre::Plugin*OgreSystem::sCDNArchivePlugin=NULL;
 std::list<OgreSystem*> OgreSystem::sActiveOgreScenes;
 uint32 OgreSystem::sNumOgreSystems=0;
-OgreSystem::OgreSystem():mLastFrameTime(Time::now()),mFloatingPointOffset(0,0,0),mPrimaryCamera(NULL),mDisablePhysics(false)
+OgreSystem::OgreSystem():mLastFrameTime(Time::now()),mFloatingPointOffset(0,0,0),mDisablePhysics(false),mPrimaryCamera(NULL)
 {
     increfcount();
     mInternalCubeMap=NULL;
