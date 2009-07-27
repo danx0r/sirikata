@@ -288,8 +288,10 @@ int main ( int argc,const char**argv ) {
     }
     pm->initialize();
     if ( graphicsSystem ) {
+        std::string msg;
         while ( graphicsSystem->tick() ) {
-            string msg=graphicsSystem->getMsg();
+            msg.clear();
+            graphicsSystem->getMsg(msg);
             if (msg!="disable_physics")            //  should check for other messages?
                 physicsSystem->tick();
         }

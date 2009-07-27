@@ -403,7 +403,7 @@ public:
     Task::EventResponse downloadFinished(Task::EventPtr evbase, bulletObj* bullobj);
     ///returns if rendering should continue
     virtual bool tick();
-    virtual std::string getMsg();
+    virtual void getMsg(std::string& s);
     ~BulletSystem();
 };
 }

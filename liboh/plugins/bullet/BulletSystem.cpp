@@ -570,8 +570,7 @@ void BulletSystem::destroyProxy(ProxyObjectPtr p) {
     }
 }
 
-string BulletSystem::getMsg() {
-    return string("");
+void BulletSystem::getMsg(std::string& s) {
 }
 
 }//namespace sirikata

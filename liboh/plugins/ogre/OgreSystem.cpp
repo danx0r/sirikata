@@ -824,10 +824,8 @@ bool OgreSystem::renderOneFrame(Time curFrameTime, Duration deltaTime) {
 }
 static Time debugStartTime = Time::now();
 
-std::string OgreSystem::getMsg() {
-    std::string s = std::string();
+void OgreSystem::getMsg(std::string& s) {
     if (mDisablePhysics) s.append("disable_physics");
-    return s;
 }
 
 bool OgreSystem::tick(){

@@ -180,7 +180,7 @@ public:
     virtual Duration desiredTickRate()const;
     ///returns if rendering should continue
     virtual bool tick();
-    virtual std::string getMsg();
+    virtual void getMsg(std::string& s);
     Ogre::RenderTarget *getRenderTarget();
     static Ogre::Root *getRoot();
     Ogre::SceneManager* getSceneManager();
