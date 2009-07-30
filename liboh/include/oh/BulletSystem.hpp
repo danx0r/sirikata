@@ -375,6 +375,9 @@ class BulletSystem: public TimeSteppedSimulation {
     btCollisionShape* groundShape;
     btRigidBody* groundBody;
 
+    /// ccrma hack:
+    Vector3d oldpos;
+
 public:
     BulletSystem();
     map<btCollisionObject*, bulletObj*> bt2siri;  /// map bullet bodies (what we get in the callbacks) to bulletObj's
