@@ -386,6 +386,7 @@ bool BulletSystem::tick() {
                             ));
                         DEBUG_OUTPUT(cout << "bulletpos after reset: " << objects[i]->getBulletState().p << endl;)
                     }
+                    /*
                     /// hacks for Rob, CCRMA
                     //Vector3f size = physicalObjects[i]->meshptr->getScale();
                     if (objects[i]->mName=="osctest") {
@@ -400,6 +401,7 @@ bool BulletSystem::tick() {
                             oscplugin::sendOSCmessage(coords);
                         }
                     }
+                    */
                 }
             }
             dynamicsWorld->stepSimulation(delta,10);
@@ -428,6 +430,14 @@ bool BulletSystem::tick() {
                         << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     }
                     dispatcher->collisionPairs[i->first]=2;
+                    
+                    /// CCRMA: send OSC message
+                    oscplugin::ball_coordinates coords;
+                    coords.ball_x = (float)position.x;
+                    coords.ball_y = (float)position.y;
+                    coords.ball_z = (float)position.z;
+                    oscplugin::sendOSCmessage(coords);
+                    cout << "ccrma: sphere moved to: " << position.x << ", " << position.y << ", " << position.z << endl;
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
                     if (b1->colMsg & b0->colMask) {
