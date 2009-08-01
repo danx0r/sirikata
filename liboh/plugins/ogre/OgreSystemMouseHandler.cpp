@@ -161,7 +161,7 @@ class OgreSystem::MouseHandler {
     Entity *hoverEntity (CameraEntity *cam, Task::AbsTime time, float xPixel, float yPixel, int *hitCount,int which=0) {
         Location location(cam->getProxy().globalLocation(time));
         Vector3f dir (pixelToDirection(cam, location.getOrientation(), xPixel, yPixel));
-        SILOG(input,info,"X is "<<xPixel<<"; Y is "<<yPixel<<"; pos = "<<location.getPosition()<<"; dir = "<<dir);
+        SILOG(input,info,"X is "<<xPixel<<"; Y is "<<yPixel<<"; pos = "<<location.getPosition()<<"; dir = "<<dir << "; which=" << which);
 
         double dist;
         Entity *mouseOverEntity = mParent->rayTrace(location.getPosition(), dir, *hitCount, dist, which);
@@ -216,7 +216,7 @@ private:
                     }
                     mSelectedObjects.erase(selectIter);
                 }
-                mWhichRayObject+=direction;
+                // mWhichRayObject+=direction;              /// comment out to always force top object
                 mLastShiftSelected = SpaceObjectReference::null();
             }else {
                 mWhichRayObject=0;
@@ -252,7 +252,7 @@ private:
         else {
             // reset selection.
             clearSelection();
-            mWhichRayObject+=direction;
+            //mWhichRayObject+=direction;       /// comment out to force selection of nearest object
             int numObjectsUnderCursor=0;
             Entity *mouseOver = hoverEntity(camera, Task::AbsTime::now(), mouseev->mX, mouseev->mY, &numObjectsUnderCursor, mWhichRayObject);
             if (numObjectsUnderCursor!=mLastHitCount){
