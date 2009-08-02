@@ -202,7 +202,8 @@ public:
                 selectIter != mSelectedObjects.end(); ++selectIter) {
             Entity *ent = mParent->getEntity((*selectIter)->getObjectReference());
             if (ent) {
-                ent->setSelected(mCounter>0x80?true:false);
+                //ent->setSelected(mCounter>0x80?true:false);
+                ent->setVisible(mCounter>0x30?true:false);
                 std::cout << "dbm debug: hilite counter: " << mCounter << std::endl;
             }
         }

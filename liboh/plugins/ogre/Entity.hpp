@@ -107,6 +107,11 @@ public:
     virtual void setSelected(bool selected) {
       mSceneNode->showBoundingBox(selected);
     }
+    
+    virtual void setVisible(bool selected) {
+        mSceneNode->setVisible(selected, selected);
+    }
+    
     virtual std::string ogreMovableName() const{
         return id().toString();
     }
