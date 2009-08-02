@@ -180,9 +180,10 @@ class OgreSystem::MouseHandler {
     }
 
     ///////////////////// CLICK HANDLERS /////////////////////
-    int mCounter;
+    Task::AbsTime mStartTime;
 public:
     void clearSelection() {
+        hiliteSelection(true);      /// stop flashing
         for (SelectedObjectSet::const_iterator selectIter = mSelectedObjects.begin();
                 selectIter != mSelectedObjects.end(); ++selectIter) {
             Entity *ent = mParent->getEntity((*selectIter)->getObjectReference());
@@ -194,17 +195,20 @@ public:
         mSelectedObjects.clear();
     }
 
-    void hiliteSelection() {
+    void hiliteSelection(bool force=false) {
         /// for now, flash selection
-        mCounter++;
-        mCounter &= 0xff;
+        Task::DeltaTime dt=Task::AbsTime::now()-mStartTime;
+        bool show;
+        if (!force)
+            show=int(dt.toSeconds()*1000) % 1000 > 250;
+        else
+            show=true;
         for (SelectedObjectSet::const_iterator selectIter = mSelectedObjects.begin();
                 selectIter != mSelectedObjects.end(); ++selectIter) {
             Entity *ent = mParent->getEntity((*selectIter)->getObjectReference());
             if (ent) {
                 //ent->setSelected(mCounter>0x80?true:false);
-                ent->setVisible(mCounter>0x30?true:false);
-                std::cout << "dbm debug: hilite counter: " << mCounter << std::endl;
+                ent->setVisible(show);
             }
         }
     }
@@ -932,6 +936,7 @@ private:
         switch (ev->mButton) {
         case SDL_SCANCODE_Q:
             mDragAction[1] = 0;
+            clearSelection();
             break;
         case SDL_SCANCODE_W:
             mDragAction[1] = DragActionRegistry::get("moveObject");
@@ -1082,7 +1087,11 @@ private:
 // Accuracy: relative versus absolute mode; exponential decay versus pixels.
 
 public:
-    MouseHandler(OgreSystem *parent) : mParent(parent), mCurrentGroup(SpaceObjectReference::null()), mWhichRayObject(0) {
+    MouseHandler(OgreSystem *parent) :
+            mParent(parent),
+            mCurrentGroup(SpaceObjectReference::null()),
+            mStartTime(Task::AbsTime::now()),
+            mWhichRayObject(0) {
         mLastHitCount=0;
         mLastHitX=0;
         mLastHitY=0;

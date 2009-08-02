@@ -106,6 +106,7 @@ public:
 
     virtual void setSelected(bool selected) {
       mSceneNode->showBoundingBox(selected);
+      setVisible(true);                         /// otherwise you can end up with hidden objects, trust me
     }
     
     virtual void setVisible(bool selected) {
