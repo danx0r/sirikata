@@ -231,7 +231,7 @@ private:
                     }
                     mSelectedObjects.erase(selectIter);
                 }
-                // mWhichRayObject+=direction;              /// comment out to always force top object
+                mWhichRayObject+=direction;              /// comment out to always force top object
                 mLastShiftSelected = SpaceObjectReference::null();
             }else {
                 mWhichRayObject=0;
@@ -267,7 +267,7 @@ private:
         else {
             // reset selection.
             clearSelection();
-            //mWhichRayObject+=direction;       /// comment out to force selection of nearest object
+            mWhichRayObject+=direction;       /// comment out to force selection of nearest object
             int numObjectsUnderCursor=0;
             Entity *mouseOver = hoverEntity(camera, Task::AbsTime::now(), mouseev->mX, mouseev->mY, &numObjectsUnderCursor, mWhichRayObject);
             if (recentMouseInRange(mouseev->mX, mouseev->mY, &mLastHitX, &mLastHitY)==false||numObjectsUnderCursor!=mLastHitCount){
