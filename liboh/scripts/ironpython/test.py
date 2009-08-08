@@ -8,7 +8,35 @@ from Sirikata.Runtime import HostedObject
 import util
 
 class exampleclass:
-    objid=0
+    def __init__(self):
+        self.objid=0
+
+    def sawAnotherObject(self,persistence,header,retstatus):
+        if header.HasField('return_status') or retstatus:
+            return
+        uuid = uuid.UUID(bytes=header.source_object)
+        myName = ""
+        for field in persistence:
+            if field.field_name == 'Name':
+                if field.HasField('data'):
+                    myName = field.data
+        print "PY: Object",uuid,"has name",myName
+
+    def locreqCallback(self, headerser, bodyser):
+        hdr = pbHead.Header()
+        hdr.ParseFromString(util.fromByteArray(headerser))
+        body = pbSiri.MessageBody()
+        body.ParseFromString(util.fromByteArray(bodyser))
+        print "PY: locreqCallback, type, lengths:", type(headerser), len(headerser), type(bodyser), len(bodyser)
+        print "PY: locreqCallback hdr:", type(hdr), hdr.return_status
+        print "PY: locreqCallback len(body.message_arguments) =", len(body.message_arguments)
+        print "PY: locreqCallback type(body.message_arguments) =", type(body.message_arguments)
+        print "PY: locreqCallback type(body.message_arguments[0]) = ", type(body.message_arguments[0])
+        print "PY: locreqCallback body.message_arguments[0] =", body.message_arguments[0]
+##        print "PY: locreqCallback body.ListFields:", body.ListFields()
+##        print "PY: locreqCallback  field descriptor:", type(body.ListFields()[0][0]), "|||", body.ListFields()[0][0].full_name
+##        print "PY: locreqCallback   field container:", type(body.ListFields()[0][1]), "|||", type(body.ListFields()[0][1][0])
+        return False
 
     def reallyProcessRPC(self,serialheader,name,serialarg):
         print "PY:", "Got an RPC named-->" + name + "<--"
@@ -31,17 +59,33 @@ class exampleclass:
             proxcall.ParseFromString(util.fromByteArray(serialarg))
             objRef = uuid.UUID(bytes=proxcall.proximate_object)
             print "PY: Proxcall on:", objRef
+
+            #not functional yet
+            """
+            if proxcall.proximity_event == pbSiri.ProxCall.ENTERED_PROXIMITY:
+                myhdr = pbHead.Header()
+                myhdr.destination_space = self.spaceid
+                myhdr.destination_object = self.objid
+                dbQuery = util.PersistenceRead(self.sawAnotherObject)
+                field = dbQuery.reads.add()
+                field.field_name = 'Name'
+                dbQuery.send(HostedObject, myhdr)
+
+            if proxcall.proximity_event == pbSiri.ProxCall.EXITED_PROXIMITY:
+                pass
+            """
+            
             if self.objid and (proxcall.proximate_object!=self.objid):
                 print "PY: sending LocRequest"
                 body = pbSiri.MessageBody()
                 body.message_names.append("LocRequest")
                 args = pbSiri.LocRequest()
-                args.requested_fields=1
+                args.requested_fields=3
                 body.message_arguments.append(args.SerializeToString())
                 header = pbHead.Header()
                 header.destination_space = self.spaceid
                 header.destination_object = proxcall.proximate_object #self.objid
-                HostedObject.CallFunction(util.toByteArray(header.SerializeToString()+body.SerializeToString()), self.callback)
+                HostedObject.CallFunction(util.toByteArray(header.SerializeToString()+body.SerializeToString()), self.locreqCallback)
 
     def processRPC(self,header,name,arg):
         try:
@@ -49,10 +93,6 @@ class exampleclass:
         except:
             print "PY:", "Error processing RPC",name
             traceback.print_exc()
-
-    def callback(self, headerser, bodyser):
-        print "PY callback, head:", len(headerser), "body:", len(bodyser)
-        return false
 
     def setPosition(self,position=None,orientation=None,velocity=None,angular_speed=None,axis=None,force=False):
         objloc = pbSiri.ObjLoc()
