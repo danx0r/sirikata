@@ -1,9 +1,9 @@
 import uuid
 import traceback
+
 import protocol.Sirikata_pb2 as pbSiri
+import protocol.Persistence_pb2 as pbPer
 import protocol.MessageHeader_pb2 as pbHead
-from System import Array, Byte
-from Sirikata.Runtime import HostedObject
 
 import util
 
@@ -39,17 +39,18 @@ class exampleclass:
         return False
 
     def reallyProcessRPC(self,serialheader,name,serialarg):
-        print "PY:", "Got an RPC named-->" + name + "<--"
+        print "Got an RPC named",name
         header = pbHead.Header()
         header.ParseFromString(util.fromByteArray(serialheader))
         if name == "RetObj":
             retobj = pbSiri.RetObj()
+            print repr(util.fromByteArray(serialarg))
             try:
                 retobj.ParseFromString(util.fromByteArray(serialarg))
             except:
                 pass
             self.objid = retobj.object_reference
-            print "PY: my UUID is:", uuid.UUID(bytes=self.objid)
+            print "sendprox1"
             self.spaceid = header.source_space
             print "PY: space UUID:", uuid.UUID(bytes=self.spaceid)
             self.setPosition(angular_speed=1,axis=(0,1,0))
@@ -87,13 +88,39 @@ class exampleclass:
                 header.destination_object = proxcall.proximate_object #self.objid
                 HostedObject.CallFunction(util.toByteArray(header.SerializeToString()+body.SerializeToString()), self.locreqCallback)
 
+            print uuid.UUID(bytes=self.spaceid)
+            self.sendNewProx()
+            self.setPosition(angular_speed=1,axis=(0,1,0))
+        elif name == "ProxCall":
+            proxcall = pbSiri.ProxCall()
+            proxcall.ParseFromString(util.fromByteArray(serialarg))
+            objRef = uuid.UUID(bytes=proxcall.proximate_object)
+            if proxcall.proximity_event == pbSiri.ProxCall.ENTERED_PROXIMITY:
+                myhdr = pbHead.Header()
+                myhdr.destination_space = self.spaceid
+                myhdr.destination_object = self.objid
+                dbQuery = util.PersistenceRead(self.sawAnotherObject)
+                field = dbQuery.reads.add()
+                field.field_name = 'Name'
+                dbQuery.send(HostedObject, myhdr)
+            if proxcall.proximity_event == pbSiri.ProxCall.EXITED_PROXIMITY:
+                pass
+    def sawAnotherObject(self,persistence,header,retstatus):
+        if header.HasField('return_status') or retstatus:
+            return
+        uuid = uuid.UUID(bytes=header.source_object)
+        myName = ""
+        for field in persistence:
+            if field.field_name == 'Name':
+                if field.HasField('data'):
+                    myName = field.data
+        print "Object",uuid,"has name",myName
     def processRPC(self,header,name,arg):
         try:
             self.reallyProcessRPC(header,name,arg)
         except:
-            print "PY:", "Error processing RPC",name
+            print "Error processing RPC",name
             traceback.print_exc()
-
     def setPosition(self,position=None,orientation=None,velocity=None,angular_speed=None,axis=None,force=False):
         objloc = pbSiri.ObjLoc()
         if position is not None:
