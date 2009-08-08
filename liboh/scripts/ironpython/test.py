@@ -37,7 +37,7 @@ class exampleclass:
             header = pbHead.Header()
             header.destination_space = self.spaceid
             header.destination_object = self.objid
-            HostedObject.SendMessage(toByteArray(header.SerializeToString()+body.SerializeToString()))
+            HostedObject.CallFunction(toByteArray(header.SerializeToString()+body.SerializeToString()), self.callback)
 
     def processRPC(self,header,name,arg):
         try:
@@ -45,3 +45,7 @@ class exampleclass:
         except:
             print "PY:", "Error processing RPC",name
             traceback.print_exc()
+
+    def callback(self, headerser, bodyser):
+        print "PY callback, head:", len(headerser), "body:", len(bodyser)
+        return false
