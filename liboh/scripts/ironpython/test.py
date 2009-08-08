@@ -8,7 +8,6 @@ from Sirikata.Runtime import HostedObject
 import util
 
 class exampleclass:
-    do_once=1
     objid=0
 
     def reallyProcessRPC(self,serialheader,name,serialarg):
@@ -33,18 +32,16 @@ class exampleclass:
             objRef = uuid.UUID(bytes=proxcall.proximate_object)
             print "PY: Proxcall on:", objRef
             if self.objid and (proxcall.proximate_object!=self.objid):
-                if self.do_once:
-                    self.do_once=0
-                    print "PY: sending LocRequest"
-                    body = pbSiri.MessageBody()
-                    body.message_names.append("LocRequest")
-                    args = pbSiri.LocRequest()
-                    args.requested_fields=1
-                    body.message_arguments.append(args.SerializeToString())
-                    header = pbHead.Header()
-                    header.destination_space = self.spaceid
-                    header.destination_object = proxcall.proximate_object #self.objid
-                    HostedObject.CallFunction(util.toByteArray(header.SerializeToString()+body.SerializeToString()), self.callback)
+                print "PY: sending LocRequest"
+                body = pbSiri.MessageBody()
+                body.message_names.append("LocRequest")
+                args = pbSiri.LocRequest()
+                args.requested_fields=1
+                body.message_arguments.append(args.SerializeToString())
+                header = pbHead.Header()
+                header.destination_space = self.spaceid
+                header.destination_object = proxcall.proximate_object #self.objid
+                HostedObject.CallFunction(util.toByteArray(header.SerializeToString()+body.SerializeToString()), self.callback)
 
     def processRPC(self,header,name,arg):
         try:
