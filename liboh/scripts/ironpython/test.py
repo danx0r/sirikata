@@ -5,41 +5,22 @@ import protocol.Sirikata_pb2 as pbSiri
 import protocol.Persistence_pb2 as pbPer
 import protocol.MessageHeader_pb2 as pbHead
 
+from Sirikata.Runtime import HostedObject
+import array
+print dir(HostedObject)
+
 import util
 
 class exampleclass:
     def __init__(self):
-        self.objid=0
-
-    def sawAnotherObject(self,persistence,header,retstatus):
-        if header.HasField('return_status') or retstatus:
-            return
-        uuid = uuid.UUID(bytes=header.source_object)
-        myName = ""
-        for field in persistence:
-            if field.field_name == 'Name':
-                if field.HasField('data'):
-                    myName = field.data
-        print "PY: Object",uuid,"has name",myName
-
-    def locreqCallback(self, headerser, bodyser):
-        hdr = pbHead.Header()
-        hdr.ParseFromString(util.fromByteArray(headerser))
-        body = pbSiri.MessageBody()
-        body.ParseFromString(util.fromByteArray(bodyser))
-        print "PY: locreqCallback, type, lengths:", type(headerser), len(headerser), type(bodyser), len(bodyser)
-        print "PY: locreqCallback hdr:", type(hdr), hdr.return_status
-        print "PY: locreqCallback len(body.message_arguments) =", len(body.message_arguments)
-        print "PY: locreqCallback type(body.message_arguments) =", type(body.message_arguments)
-        print "PY: locreqCallback type(body.message_arguments[0]) = ", type(body.message_arguments[0])
-        print "PY: locreqCallback body.message_arguments[0] =", body.message_arguments[0]
-##        print "PY: locreqCallback body.ListFields:", body.ListFields()
-##        print "PY: locreqCallback  field descriptor:", type(body.ListFields()[0][0]), "|||", body.ListFields()[0][0].full_name
-##        print "PY: locreqCallback   field container:", type(body.ListFields()[0][1]), "|||", type(body.ListFields()[0][1][0])
-        return False
+        self.val=0
+    def func(self,otherval):
+        self.val+=otherval
+        print self.val
+        return self.val;
 
     def reallyProcessRPC(self,serialheader,name,serialarg):
-        print "Got an RPC named",name
+        print "PY: Got an RPC named-->" + name + "<--"
         header = pbHead.Header()
         header.ParseFromString(util.fromByteArray(serialheader))
         if name == "RetObj":
@@ -50,19 +31,16 @@ class exampleclass:
             except:
                 pass
             self.objid = retobj.object_reference
-            print "sendprox1"
+            print "PY: I am", util.tupleToUUID(self.objid)
             self.spaceid = header.source_space
-            print "PY: space UUID:", uuid.UUID(bytes=self.spaceid)
+            print "PY: space UUID:", util.tupleToUUID(self.spaceid)
+            self.sendNewProx()
             self.setPosition(angular_speed=1,axis=(0,1,0))
-
         elif name == "ProxCall":
             proxcall = pbSiri.ProxCall()
             proxcall.ParseFromString(util.fromByteArray(serialarg))
-            objRef = uuid.UUID(bytes=proxcall.proximate_object)
+            objRef = util.tupleToUUID(proxcall.proximate_object)
             print "PY: Proxcall on:", objRef
-
-            #not functional yet
-            """
             if proxcall.proximity_event == pbSiri.ProxCall.ENTERED_PROXIMITY:
                 myhdr = pbHead.Header()
                 myhdr.destination_space = self.spaceid
@@ -71,11 +49,9 @@ class exampleclass:
                 field = dbQuery.reads.add()
                 field.field_name = 'Name'
                 dbQuery.send(HostedObject, myhdr)
-
             if proxcall.proximity_event == pbSiri.ProxCall.EXITED_PROXIMITY:
                 pass
-            """
-            
+
             if self.objid and (proxcall.proximate_object!=self.objid):
                 print "PY: sending LocRequest"
                 body = pbSiri.MessageBody()
@@ -88,23 +64,39 @@ class exampleclass:
                 header.destination_object = proxcall.proximate_object #self.objid
                 HostedObject.CallFunction(util.toByteArray(header.SerializeToString()+body.SerializeToString()), self.locreqCallback)
 
-            print util.tupleToUUID(self.spaceid)
-            self.sendNewProx()
-            self.setPosition(angular_speed=1,axis=(0,1,0))
-        elif name == "ProxCall":
-            proxcall = pbSiri.ProxCall()
-            proxcall.ParseFromString(util.fromByteArray(serialarg))
-            objRef = util.tupleToUUID(proxcall.proximate_object)
-            if proxcall.proximity_event == pbSiri.ProxCall.ENTERED_PROXIMITY:
-                myhdr = pbHead.Header()
-                myhdr.destination_space = self.spaceid
-                myhdr.destination_object = self.objid
-                dbQuery = util.PersistenceRead(self.sawAnotherObject)
-                field = dbQuery.reads.add()
-                field.field_name = 'Name'
-                dbQuery.send(HostedObject, myhdr)
-            if proxcall.proximity_event == pbSiri.ProxCall.EXITED_PROXIMITY:
-                pass
+    def hexdump(self, data, fn):
+        b = array.array("B",[])
+        for i in data:
+            b.append(i)
+        f = open(fn,"wb")
+        f.write(b.tostring())
+        f.close()
+
+    def locreqCallback(self, headerser, bodyser):
+        self.hexdump(headerser, "header.dump")
+        self.hexdump(bodyser, "body.dump")
+        hdr = pbHead.Header()
+        hdr.ParseFromString(util.fromByteArray(headerser))
+        body = pbSiri.MessageBody()
+        body.ParseFromString(util.fromByteArray(bodyser))
+        response = pbSiri.ObjLoc()
+        print "PY: locreqCallback debug A"
+        response.ParseFromString(util.fromByteArray(body.message_arguments[0]))
+        print "PY: locreqCallback debug B"                                     
+        print "PY: locreqCallback, response:", type(response)
+        print "PY: locreqCallback, type, lengths:", type(headerser), len(headerser), type(bodyser), len(bodyser)
+        print "PY: locreqCallback hdr.source_port", hdr.source_port
+##        print "PY: locreqCallback hdr.dest_port", hdr.dest_port
+        print "PY: locreqCallback len(body.message_arguments) =", len(body.message_arguments)
+        print "PY: locreqCallback type(body.message_arguments) =", type(body.message_arguments)
+        print "PY: locreqCallback type(body.message_arguments[0]) = ", type(body.message_arguments[0])
+        print "PY: locreqCallback body.message_arguments[0] =", body.message_arguments[0]
+        print "PY: locreqCallback body.message_names =", body.message_names
+        print "PY: locreqCallback len(body.message_names) =", len(body.message_names)
+##        print "PY: locreqCallback  field descriptor:", type(body.ListFields()[0][0]), "|||", body.ListFields()[0][0].full_name
+##        print "PY: locreqCallback   field container:", type(body.ListFields()[0][1]), "|||", type(body.ListFields()[0][1][0])
+        return False
+
     def sawAnotherObject(self,persistence,header,retstatus):
         if header.HasField('return_status') or retstatus:
             return
@@ -114,13 +106,15 @@ class exampleclass:
             if field.field_name == 'Name':
                 if field.HasField('data'):
                     myName = field.data
-        print "Object",uuid,"has name",myName
+        print "PY: Object",uuid,"has name",myName
+
     def processRPC(self,header,name,arg):
         try:
             self.reallyProcessRPC(header,name,arg)
         except:
-            print "Error processing RPC",name
+            print "PY: Error processing RPC",name
             traceback.print_exc()
+
     def setPosition(self,position=None,orientation=None,velocity=None,angular_speed=None,axis=None,force=False):
         objloc = pbSiri.ObjLoc()
         if position is not None:
