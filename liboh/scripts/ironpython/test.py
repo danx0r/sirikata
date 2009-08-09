@@ -73,28 +73,16 @@ class exampleclass:
         f.close()
 
     def locreqCallback(self, headerser, bodyser):
-        self.hexdump(headerser, "header.dump")
-        self.hexdump(bodyser, "body.dump")
+##        self.hexdump(headerser, "header.dump")
+##        self.hexdump(bodyser, "body.dump")
         hdr = pbHead.Header()
         hdr.ParseFromString(util.fromByteArray(headerser))
         body = pbSiri.MessageBody()
         body.ParseFromString(util.fromByteArray(bodyser))
         response = pbSiri.ObjLoc()
-        print "PY: locreqCallback debug A"
         response.ParseFromString(util.fromByteArray(body.message_arguments[0]))
-        print "PY: locreqCallback debug B"                                     
-        print "PY: locreqCallback, response:", type(response)
-        print "PY: locreqCallback, type, lengths:", type(headerser), len(headerser), type(bodyser), len(bodyser)
-        print "PY: locreqCallback hdr.source_port", hdr.source_port
-##        print "PY: locreqCallback hdr.dest_port", hdr.dest_port
-        print "PY: locreqCallback len(body.message_arguments) =", len(body.message_arguments)
-        print "PY: locreqCallback type(body.message_arguments) =", type(body.message_arguments)
-        print "PY: locreqCallback type(body.message_arguments[0]) = ", type(body.message_arguments[0])
-        print "PY: locreqCallback body.message_arguments[0] =", body.message_arguments[0]
-        print "PY: locreqCallback body.message_names =", body.message_names
-        print "PY: locreqCallback len(body.message_names) =", len(body.message_names)
-##        print "PY: locreqCallback  field descriptor:", type(body.ListFields()[0][0]), "|||", body.ListFields()[0][0].full_name
-##        print "PY: locreqCallback   field container:", type(body.ListFields()[0][1]), "|||", type(body.ListFields()[0][1][0])
+        print "PY: locreqCallback, position:", response.position[0], response.position[1], response.position[2]
+        print "PY: locreqCallback, orientation:", response.orientation[0], response.orientation[1], response.orientation[2]
         return False
 
     def sawAnotherObject(self,persistence,header,retstatus):
