@@ -11,7 +11,7 @@ print dir(HostedObject)
 
 import util
 
-class exampleclass:
+class SirikataObjectScript:
     def __init__(self):
         self.val=0
     def func(self,otherval):
@@ -35,7 +35,7 @@ class exampleclass:
             self.spaceid = header.source_space
             print "PY: space UUID:", util.tupleToUUID(self.spaceid)
             self.sendNewProx()
-            self.setPosition(angular_speed=1,axis=(0,1,0))
+##            self.setPosition(angular_speed=1,axis=(0,1,0))
         elif name == "ProxCall":
             proxcall = pbSiri.ProxCall()
             proxcall.ParseFromString(util.fromByteArray(serialarg))
@@ -75,8 +75,8 @@ class exampleclass:
     def locreqCallback(self, headerser, bodyser):
 ##        self.hexdump(headerser, "header.dump")
 ##        self.hexdump(bodyser, "body.dump")
-        hdr = pbHead.Header()
-        hdr.ParseFromString(util.fromByteArray(headerser))
+##        hdr = pbHead.Header()
+##        hdr.ParseFromString(util.fromByteArray(headerser))
         body = pbSiri.MessageBody()
         body.ParseFromString(util.fromByteArray(bodyser))
         response = pbSiri.ObjLoc()

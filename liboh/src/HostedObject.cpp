@@ -743,7 +743,7 @@ void HostedObject::initializePythonScript() {
         args["Class"]="PythonObject";
         args["Namespace"]="Sirikata.Runtime";
         args["PythonModule"]="test";
-        args["PythonClass"]="exampleclass";
+        args["PythonClass"]="SirikataObjectScript";
 
         mObjectScript=mgr->createObjectScript(this,args);
         if (mObjectScript) {
