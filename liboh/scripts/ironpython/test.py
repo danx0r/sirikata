@@ -7,22 +7,59 @@ import protocol.MessageHeader_pb2 as pbHead
 
 from Sirikata.Runtime import HostedObject
 import array
-print dir(HostedObject)
 
 import util
 
+class Struct:
+    pass
+
 class SirikataObjectScript:
+
     def __init__(self):
-        self.val=0
-    def func(self,otherval):
-        self.val+=otherval
-        print self.val
-        return self.val;
+        self.known_objects={}               # will fill with location info as we discover 'em
+
+    def locreqCallback(self, headerser, bodyser):
+        hdr = pbHead.Header()
+        hdr.ParseFromString(util.fromByteArray(headerser))
+##        print "PY header:", type(hdr), dir(hdr)
+        objID = util.tupleToUUID(hdr.source_object)
+        print "PY locreqCb source obj:", objID
+##        self.known_objects[objID].position = fuk
+        body = pbSiri.MessageBody()
+        body.ParseFromString(util.fromByteArray(bodyser))
+        response = pbSiri.ObjLoc()
+        response.ParseFromString(util.fromByteArray(body.message_arguments[0]))
+        obj = self.known_objects[objID]
+        if len(response.position):
+            obj.position=response.position
+            print "PY: locreqCallback, position:", response.position[0], response.position[1], response.position[2]
+        if len(response.orientation):
+            obj.orientation=decode_quaternion(response.orientation)
+        if len(response.velocity):
+            obj.velocity=response.velocity
+            print "PY: locreqCallback, velocity:", obj.velocity[0], obj.velocity[1], obj.velocity[2]
+        if len(response.rotational_axis):
+            obj.rotational_axis=decode_rotational_axis(response.rotational_axis)
+            obj.angular_speed=response.angular_speed        #lazy
+        return False
+
+    def sendLocRequest(self, obj, mask):
+        ### mask: 1 = position, 2=orientation, 4=velocity, 8=axis, 16=ang vel
+        body = pbSiri.MessageBody()
+        body.message_names.append("LocRequest")
+        args = pbSiri.LocRequest()
+        args.requested_fields=mask
+        body.message_arguments.append(args.SerializeToString())
+        header = pbHead.Header()
+        header.destination_space = self.spaceid             #one space for now
+        header.destination_object = obj #self.objid
+        HostedObject.CallFunction(util.toByteArray(header.SerializeToString()+body.SerializeToString()), self.locreqCallback)
 
     def reallyProcessRPC(self,serialheader,name,serialarg):
         print "PY: Got an RPC named-->" + name + "<--"
         header = pbHead.Header()
         header.ParseFromString(util.fromByteArray(serialheader))
+
         if name == "RetObj":
             retobj = pbSiri.RetObj()
             #print repr(util.fromByteArray(serialarg))
@@ -36,10 +73,14 @@ class SirikataObjectScript:
             print "PY: space UUID:", util.tupleToUUID(self.spaceid)
             self.sendNewProx()
 ##            self.setPosition(angular_speed=1,axis=(0,1,0))
+
         elif name == "ProxCall":
             proxcall = pbSiri.ProxCall()
             proxcall.ParseFromString(util.fromByteArray(serialarg))
             objRef = util.tupleToUUID(proxcall.proximate_object)
+            if not objRef in self.known_objects:
+                self.known_objects[objRef] = Struct()
+            self.known_objects[objRef].objTup=proxcall.proximate_object
             print "PY: Proxcall on:", objRef
             if proxcall.proximity_event == pbSiri.ProxCall.ENTERED_PROXIMITY:
                 myhdr = pbHead.Header()
@@ -54,15 +95,7 @@ class SirikataObjectScript:
 
             if self.objid and (proxcall.proximate_object!=self.objid):
                 print "PY: sending LocRequest"
-                body = pbSiri.MessageBody()
-                body.message_names.append("LocRequest")
-                args = pbSiri.LocRequest()
-                args.requested_fields=3
-                body.message_arguments.append(args.SerializeToString())
-                header = pbHead.Header()
-                header.destination_space = self.spaceid
-                header.destination_object = proxcall.proximate_object #self.objid
-                HostedObject.CallFunction(util.toByteArray(header.SerializeToString()+body.SerializeToString()), self.locreqCallback)
+                self.sendLocRequest(proxcall.proximate_object, 1+4)
 
     def hexdump(self, data, fn):
         b = array.array("B",[])
@@ -71,19 +104,6 @@ class SirikataObjectScript:
         f = open(fn,"wb")
         f.write(b.tostring())
         f.close()
-
-    def locreqCallback(self, headerser, bodyser):
-##        self.hexdump(headerser, "header.dump")
-##        self.hexdump(bodyser, "body.dump")
-##        hdr = pbHead.Header()
-##        hdr.ParseFromString(util.fromByteArray(headerser))
-        body = pbSiri.MessageBody()
-        body.ParseFromString(util.fromByteArray(bodyser))
-        response = pbSiri.ObjLoc()
-        response.ParseFromString(util.fromByteArray(body.message_arguments[0]))
-        print "PY: locreqCallback, position:", response.position[0], response.position[1], response.position[2]
-        print "PY: locreqCallback, orientation:", response.orientation[0], response.orientation[1], response.orientation[2]
-        return False
 
     def sawAnotherObject(self,persistence,header,retstatus):
         if header.HasField('return_status') or retstatus:
