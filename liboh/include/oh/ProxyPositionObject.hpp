@@ -90,6 +90,9 @@ public:
     const Vector3d& getPosition() const{
         return mLocation.lastValue().getPosition();
     }
+    const Vector3f& getVelocity() const{
+        return mLocation.lastValue().getVelocity();
+    }
     const Quaternion& getOrientation() const{
         return mLocation.lastValue().getOrientation();
     }

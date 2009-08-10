@@ -343,6 +343,8 @@ public:
     void setBulletState(positionOrientation pq);
     void buildBulletBody(const unsigned char*, int);
     void buildBulletShape(const unsigned char* meshdata, int meshbytes, float& mass);
+    void getBulletVel(Vector3f& linearVel);
+    void setBulletVel(Vector3f linearVel);
 };
 
 class customDispatch :public btCollisionDispatcher {
@@ -387,7 +389,7 @@ public:
                            float sizx, float sizy, float sizz);
     void removePhysicalObject(bulletObj*);
     static TimeSteppedQueryableSimulation* create(Provider<ProxyCreationListener*>*proxyManager,
-                                         const String&options) {
+            const String&options) {
         BulletSystem*os= new BulletSystem;
         if (os->initialize(proxyManager,options))
             return os;
@@ -396,7 +398,7 @@ public:
     }
     bulletObj* mesh2bullet (ProxyMeshObjectPtr meshptr) {
         bulletObj* bo=0;
-        for(unsigned int i=0; i<objects.size(); i++) {
+        for (unsigned int i=0; i<objects.size(); i++) {
             if (objects[i]->mMeshptr==meshptr) {
                 bo=objects[i];
                 break;

@@ -132,8 +132,16 @@ void bulletObj::setPhysical (const physicalParameters &pp) {
 
 positionOrientation bulletObj::getBulletState() {
     btTransform trans;
-    this->mBulletBodyPtr->getMotionState()->getWorldTransform(trans);
+    mBulletBodyPtr->getMotionState()->getWorldTransform(trans);
     return positionOrientation(trans.getOrigin(),trans.getRotation());
+}
+
+void bulletObj::getBulletVel(Vector3f& linearVel) {
+    btVector3 blv = mBulletBodyPtr->getLinearVelocity();
+    linearVel.x = blv.getX();
+    linearVel.y = blv.getY();
+    linearVel.z = blv.getZ();
+    /// need to convert angular vel from Euler to axis + speed
 }
 
 void bulletObj::setBulletState(positionOrientation po) {
@@ -149,6 +157,11 @@ void bulletObj::setBulletState(positionOrientation po) {
         mBulletBodyPtr->getMotionState()->setWorldTransform(trans);   /// how to move 'kinematic' objects (animated)
     }
     mBulletBodyPtr->activate(true);      /// wake up, you lazy slob!
+}
+
+void bulletObj::setBulletVel(Vector3f vel) {
+    btVector3 bv(vel.x, vel.y, vel.z);
+    mBulletBodyPtr->setLinearVelocity(bv);
 }
 
 void bulletObj::setScale (const Vector3f &newScale) {
@@ -357,10 +370,15 @@ void BulletSystem::removePhysicalObject(bulletObj* obj) {
     }
 }
 
+float distSqV3(Vector3f v1, Vector3f v2) {
+    return ( (v1.x-v2.x)*(v1.x-v2.x) + (v1.y-v2.y)*(v1.y-v2.y) + (v1.z-v2.z)*(v1.z-v2.z) );
+}
+
 bool BulletSystem::tick() {
     static Task::AbsTime lasttime = mStartTime;
     static Task::DeltaTime waittime = Task::DeltaTime::seconds(0.02);
     static int mode = 0;
+    static Vector3f lastAvatarLinearVel = Vector3f();
     Task::AbsTime now = Task::AbsTime::now();
     Task::DeltaTime delta;
     positionOrientation po;
@@ -373,8 +391,19 @@ bool BulletSystem::tick() {
         if ((now-mStartTime) > 10.0) {
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->mActive) {
-                    if (objects[i]->mMeshptr->getPosition() != objects[i]->getBulletState().p ||
-                            objects[i]->mMeshptr->getOrientation() != objects[i]->getBulletState().o) {
+                    if (objects[i]->mName=="avatar1") {
+                        Vector3f linvel;
+                        objects[i]->getBulletVel(linvel);
+                        cout << "dbm debug avatar1 mesh old vel:" << lastAvatarLinearVel << 
+                                " new vel: " << objects[i]->mMeshptr->getVelocity() << endl;
+                        if (distSqV3(objects[i]->mMeshptr->getVelocity(), lastAvatarLinearVel) > 0.001) {
+                            lastAvatarLinearVel = objects[i]->mMeshptr->getVelocity();
+                            cout << "     dbm debug avatar1 setting linear vel" << endl;
+                            objects[i]->setBulletVel(objects[i]->mMeshptr->getVelocity());
+                        }
+                    }
+                    else if (objects[i]->mMeshptr->getPosition() != objects[i]->getBulletState().p ||
+                             objects[i]->mMeshptr->getOrientation() != objects[i]->getBulletState().o) {
                         /// if object has been moved, reset bullet position accordingly
                         DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->mName << " moved by user!"
                                      << " meshpos: " << objects[i]->mMeshptr->getPosition()
@@ -411,7 +440,7 @@ bool BulletSystem::tick() {
             queryRay(Vector3d(0, 10, 0), Vector3f(0,-1,0), 20.0, bugObj, dist, norm, sor);
             cout << "dbm debug: queryRay returns distance: " << dist << " normal: " << norm << " object: " << sor << endl;
             */
-            
+
             /// collision messages
             for (map<set<bulletObj*>, int>::iterator i=dispatcher->collisionPairs.begin();
                     i != dispatcher->collisionPairs.end(); ++i) {
