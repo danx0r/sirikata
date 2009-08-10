@@ -166,7 +166,8 @@ class OgreSystem::MouseHandler {
         SILOG(input,info,"X is "<<xPixel<<"; Y is "<<yPixel<<"; pos = "<<location.getPosition()<<"; dir = "<<dir << "; which=" << which);
 
         double dist;
-        Entity *mouseOverEntity = mParent->rayTrace(location.getPosition(), dir, *hitCount, dist, which);
+        Vector3f normal;
+        Entity *mouseOverEntity = mParent->rayTrace(location.getPosition(), dir, *hitCount, dist, normal, which);
         if (mouseOverEntity) {
             while (!(mouseOverEntity->getProxy().getParent() == mCurrentGroup)) {
                 mouseOverEntity = mParent->getEntity(mouseOverEntity->getProxy().getParent());
@@ -416,6 +417,7 @@ private:
         SpaceObjectReference parentId = mCurrentGroup;
         Task::AbsTime now(Task::AbsTime::now());
         ProxyManager *proxyMgr = mParent->mPrimaryCamera->getProxy().getProxyManager();
+        std::string groupname;
         for (SelectedObjectSet::iterator iter = mSelectedObjects.begin();
                 iter != mSelectedObjects.end(); ++iter) {
             Entity *ent = mParent->getEntity((*iter)->getObjectReference());
@@ -429,6 +431,10 @@ private:
                       " has parent  "<<ent->getProxy().getParent() << " instead of " << mCurrentGroup);
                 return EventResponse::nop();
             }
+            ProxyMeshObject*meshobj = dynamic_cast<ProxyMeshObject*>(ent->getProxyPtr().get());
+            if (meshobj && !meshobj->getPhysical().name.empty()) {
+                groupname = meshobj->getPhysical().name;
+            }
         }
         Vector3d totalPosition (averageSelectedPosition(now, mSelectedObjects.begin(), mSelectedObjects.end()));
         Location totalLocation (totalPosition,Quaternion::identity(),Vector3f(0,0,0),Vector3f(0,0,0),0);
@@ -439,7 +445,15 @@ private:
         }
 
         SpaceObjectReference newParentId = SpaceObjectReference(mCurrentGroup.space(), ObjectReference(UUID::random()));
-        proxyMgr->createObject(ProxyObjectPtr(new ProxyMeshObject(proxyMgr, newParentId)));
+        ProxyMeshObject* groupobj = new ProxyMeshObject(proxyMgr, newParentId);
+        physicalParameters props = groupobj->getPhysical();
+        if (!groupname.empty()) {
+            props.name = "grp-" + groupname;
+        } else {
+            props.name = "group";
+        }
+        groupobj->setPhysical(props);
+        proxyMgr->createObject(ProxyObjectPtr(groupobj));
         Entity *newParentEntity = mParent->getEntity(newParentId);
         newParentEntity->getProxy().resetPositionVelocity(now, totalLocation);
 
@@ -750,7 +764,12 @@ private:
         return EventResponse::cancel();
     }
 
+    set<string> saveSceneNames;
+    map<ProxyMeshObject*,string> entityNames;
+    
     EventResponse saveScene(EventPtr ev) {
+        saveSceneNames.clear();
+        entityNames.clear();
         std::cout << "saving new scene as scene_new.csv: " << std::endl;
         FILE *output = fopen("scene_new.csv", "wt");
         if (!output) {
@@ -761,7 +780,7 @@ private:
         fprintf(output, "pos_x,pos_y,pos_z,orient_x,orient_y,orient_z,orient_w,scale_x,scale_y,scale_z,hull_x,hull_y,hull_z,");
         fprintf(output, "density,friction,bounce,colMask,colMsg,meshURI,diffuse_x,diffuse_y,diffuse_z,ambient,");
         fprintf(output, "specular_x,specular_y,specular_z,shadowpower,");
-        fprintf(output, "range,constantfall,linearfall,quadfall,cone_in,cone_out,power,cone_fall,shadow\n");
+        fprintf(output, "range,constfall,linearfall,quadfall,cone_in,cone_out,power,cone_fall,shadow\n");
         OgreSystem::SceneEntitiesMap::const_iterator iter;
         vector<Entity*> entlist;
         entlist.clear();
@@ -794,14 +813,32 @@ private:
         }
         return true;
     }
-
+    
     string physicalName(ProxyMeshObject *obj) {
+        map<ProxyMeshObject*,string>::iterator iter = entityNames.find(obj);
+        if (iter != entityNames.end()) {
+            return iter->second;
+        }
         std::string name = obj->getPhysical().name;
         if (name.empty()) {
-            std::ostringstream os;
-            os << "obj" << (ObjectReference::Hasher()(obj->getObjectReference().object())%1677217);
-            name = os.str();
+            name = obj->getMesh().filename();
+            if (name.size() > 5) {
+                name.resize(name.size()-5);
+            } else {
+                name = "group";
+            }
         }
+        int basesize = name.size();
+        int count = 1;
+        while (saveSceneNames.count(name)) {
+            name.resize(basesize);
+            std::ostringstream os;
+            os << name << "." << count;
+            name = os.str();
+            count++;
+        }
+        saveSceneNames.insert(name);
+        entityNames.insert(map<ProxyMeshObject*,string>::value_type(obj, name));
         return name;
     }
     void dumpObject(FILE* fp, Entity* e) {

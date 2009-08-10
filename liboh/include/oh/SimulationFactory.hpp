@@ -34,13 +34,13 @@
 #define _SIRIKATA_GRAPHICS_FACTORY_
 #include <oh/Platform.hpp>
 #include <util/ListenerProvider.hpp>
-#include "TimeSteppedSimulation.hpp"
+#include "TimeSteppedQueryableSimulation.hpp"
 namespace Sirikata{
 
 ///Class to create graphics subsystems. FIXME: should this load a dll when a named factory is not found
 class SIRIKATA_OH_EXPORT SimulationFactory
     : public AutoSingleton<SimulationFactory>,
-      public Factory2<TimeSteppedSimulation*,
+      public Factory2<TimeSteppedQueryableSimulation*,
                       Provider<ProxyCreationListener*>*,//the ProxyManager
                       const String&> //options string for the graphics system
 {
