@@ -391,7 +391,9 @@ bool BulletSystem::tick() {
         if ((now-mStartTime) > 10.0) {
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->mActive) {
-                    if (objects[i]->mName=="avatar1") {
+                    string temp=objects[i]->mName;
+                    temp.resize(6);
+                    if (temp=="avatar") {
                         Vector3f linvel;
                         objects[i]->getBulletVel(linvel);
                         cout << "dbm debug avatar1 mesh old vel:" << lastAvatarLinearVel << 
