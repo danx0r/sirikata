@@ -394,15 +394,7 @@ bool BulletSystem::tick() {
                     string temp=objects[i]->mName;
                     temp.resize(6);
                     if (temp=="avatar") {
-                        Vector3f linvel;
-                        objects[i]->getBulletVel(linvel);
-                        if (distSqV3(objects[i]->mMeshptr->getVelocity(), lastAvatarLinearVel) > 0.001) {
-                            cout << "dbm debug avatar1 mesh old vel:" << lastAvatarLinearVel <<
-                            " new vel: " << objects[i]->mMeshptr->getVelocity() << endl;
-                            lastAvatarLinearVel = objects[i]->mMeshptr->getVelocity();
-                            cout << "     dbm debug avatar1 setting linear vel" << endl;
-                            objects[i]->setBulletVel(objects[i]->mMeshptr->getVelocity());
-                        }
+                        cout << "dbm debug avatar handler" << endl;
                     }
                     else if (objects[i]->mMeshptr->getPosition() != objects[i]->getBulletState().p ||
                              objects[i]->mMeshptr->getOrientation() != objects[i]->getBulletState().o) {
@@ -423,12 +415,16 @@ bool BulletSystem::tick() {
 
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->mActive) {
-                    po = objects[i]->getBulletState();
-                    DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->mName << ", delta, "
-                                 << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl);
-                    cout << "    dbm: object, " << objects[i]->mName << ", delta, "
-                    << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl;
-                    objects[i]->mMeshptr->setPosition(now, po.p, po.o);
+                    string temp=objects[i]->mName;
+                    temp.resize(6);
+                    if (temp!="avatar") {
+                        po = objects[i]->getBulletState();
+                        DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->mName << ", delta, "
+                                     << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl);
+                        cout << "    dbm: object, " << objects[i]->mName << ", delta, "
+                        << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl;
+                        objects[i]->mMeshptr->setPosition(now, po.p, po.o);
+                    }
                 }
             }
 
