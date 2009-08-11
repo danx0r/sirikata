@@ -537,7 +537,8 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
     Transfer::TransferManager* tm = (Transfer::TransferManager*)mTempTferManager->as<void*>();
     this->transferManager = tm;
 
-    gravity = Vector3d(0, -9.8, 0);
+//    gravity = Vector3d(0, -9.8, 0);
+    gravity = Vector3d(0, 0, 0);
     //groundlevel = 3044.0;
     groundlevel = 0.0;
     btTransform groundTransform;
