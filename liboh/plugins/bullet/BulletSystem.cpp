@@ -396,9 +396,9 @@ bool BulletSystem::tick() {
                     if (temp=="avatar") {
                         Vector3f linvel;
                         objects[i]->getBulletVel(linvel);
-                        cout << "dbm debug avatar1 mesh old vel:" << lastAvatarLinearVel << 
-                                " new vel: " << objects[i]->mMeshptr->getVelocity() << endl;
                         if (distSqV3(objects[i]->mMeshptr->getVelocity(), lastAvatarLinearVel) > 0.001) {
+                            cout << "dbm debug avatar1 mesh old vel:" << lastAvatarLinearVel <<
+                            " new vel: " << objects[i]->mMeshptr->getVelocity() << endl;
                             lastAvatarLinearVel = objects[i]->mMeshptr->getVelocity();
                             cout << "     dbm debug avatar1 setting linear vel" << endl;
                             objects[i]->setBulletVel(objects[i]->mMeshptr->getVelocity());
@@ -425,7 +425,9 @@ bool BulletSystem::tick() {
                 if (objects[i]->mActive) {
                     po = objects[i]->getBulletState();
                     DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->mName << ", delta, "
-                                 << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl;)
+                                 << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl);
+                    cout << "    dbm: object, " << objects[i]->mName << ", delta, "
+                    << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl;
                     objects[i]->mMeshptr->setPosition(now, po.p, po.o);
                 }
             }

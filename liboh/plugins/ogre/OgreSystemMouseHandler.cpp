@@ -638,6 +638,7 @@ private:
         case SDL_SCANCODE_W:
             amount *= camSpeed;
             amount *= WORLD_SCALE;
+            std::cout << "dbm debug setting camera velocity to " << direction(orient)*amount << std::endl;
             loc.setVelocity(direction(orient)*amount);
             loc.setAngularSpeed(0);
             break;
@@ -733,6 +734,7 @@ private:
         default:
             break;
         }
+        std::cout << "dbm debug setting camera velocity(2) to " << loc << std::endl;
         camProxy->setPositionVelocity(now, loc);
         return EventResponse::nop();
     }
