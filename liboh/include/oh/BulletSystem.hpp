@@ -376,7 +376,7 @@ class BulletSystem: public TimeSteppedQueryableSimulation {
     btSequentialImpulseConstraintSolver* solver;
     btCollisionShape* groundShape;
     btRigidBody* groundBody;
-    string mLastQuery;
+    bulletObj* mLastQuery;
 
 public:
     BulletSystem();

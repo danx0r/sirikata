@@ -379,7 +379,7 @@ bool BulletSystem::tick() {
     static Task::DeltaTime waittime = Task::DeltaTime::seconds(0.02);
     static int mode = 0;
     static Vector3f lastAvatarLinearVel = Vector3f();
-    static string lastPathSection;
+    static string lastPathSection="nothing";
     Task::AbsTime now = Task::AbsTime::now();
     Task::DeltaTime delta;
     positionOrientation po;
@@ -398,16 +398,18 @@ bool BulletSystem::tick() {
                         double dist;
                         Vector3f norm;
                         SpaceObjectReference sor;
+                        string queryName="nothing";
                         if (queryRay(objects[i]->mMeshptr->getPosition(), Vector3f(0,-1,0), 20.0, objects[i]->mMeshptr, dist, norm, sor)) {
+                            queryName=mLastQuery->mName;
                             cout << "dbm debug: queryRay returns distance: " << dist << " normal: " << norm
-                            << " object: " << mLastQuery << endl;
+                            << " object: " << queryName << endl;
                         }
                         else {
                             cout << "dbm debug: queryRay returns nothing" << endl;
                         }
-                        if (mLastQuery != lastPathSection) {
-                            cout << "dbm debug OSC event: stepped off " << lastPathSection << " and onto " << mLastQuery << endl;
-                            lastPathSection = mLastQuery;
+                        if (queryName != lastPathSection) {
+                            cout << "dbm debug OSC event: stepped off " << lastPathSection << " and onto " << queryName << endl;
+                            lastPathSection = queryName;
                         }
                     }
                     else if (objects[i]->mMeshptr->getPosition() != objects[i]->getBulletState().p ||
@@ -685,12 +687,11 @@ bool BulletSystem::queryRay(const Vector3d& position,
         if (obj) {
             /// if not found, it's probably the ground body
             returnName = obj->mMeshptr->getObjectReference();
-            mLastQuery = obj->mName;
+            mLastQuery = obj;
         }
         return true;
     }
     else {
-        mLastQuery = "";
         return false;
     }
 }
