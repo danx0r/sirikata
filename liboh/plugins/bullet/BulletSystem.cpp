@@ -394,7 +394,16 @@ bool BulletSystem::tick() {
                     string temp=objects[i]->mName;
                     temp.resize(6);
                     if (temp=="avatar") {
-                        cout << "dbm debug avatar handler" << endl;
+                        double dist;
+                        Vector3f norm;
+                        SpaceObjectReference sor;
+                        if (queryRay(objects[i]->mMeshptr->getPosition(), Vector3f(0,-1,0), 20.0, objects[i]->mMeshptr, dist, norm, sor)) {
+                            cout << "dbm debug: queryRay returns distance: " << dist << " normal: " << norm 
+                                    << " object: " << mLastQuery << endl;
+                        }
+                        else {
+                            cout << "dbm debug: queryRay returns nothing" << endl;
+                        }
                     }
                     else if (objects[i]->mMeshptr->getPosition() != objects[i]->getBulletState().p ||
                              objects[i]->mMeshptr->getOrientation() != objects[i]->getBulletState().o) {
@@ -538,7 +547,7 @@ bool BulletSystem::initialize(Provider<ProxyCreationListener*>*proxyManager, con
 //    gravity = Vector3d(0, -9.8, 0);
     gravity = Vector3d(0, 0, 0);
     //groundlevel = 3044.0;
-    groundlevel = 0.0;
+    groundlevel = -1000.0;
     btTransform groundTransform;
     btDefaultMotionState* mMotionState;
     btVector3 worldAabbMin(-10000,-10000,-10000);
@@ -671,6 +680,7 @@ bool BulletSystem::queryRay(const Vector3d& position,
         if (obj) {
             /// if not found, it's probably the ground body
             returnName = obj->mMeshptr->getObjectReference();
+            mLastQuery = obj->mName;
         }
         return true;
     }

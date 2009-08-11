@@ -132,7 +132,7 @@ class parseOgreMesh {
     void read_chunks(int count) {
         int start;
         start = ix;
-        while ( ix<(start+count) & ix<(int)data.size() ) {
+        while ( ix<(start+count) && ix<(int)data.size() ) {
             read_chunk();
         }
     }
@@ -376,6 +376,7 @@ class BulletSystem: public TimeSteppedQueryableSimulation {
     btSequentialImpulseConstraintSolver* solver;
     btCollisionShape* groundShape;
     btRigidBody* groundBody;
+    string mLastQuery;
 
 public:
     BulletSystem();
