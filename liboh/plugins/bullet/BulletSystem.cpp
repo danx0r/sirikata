@@ -38,6 +38,7 @@
 #include <transfer/TransferManager.hpp>
 #include "btBulletDynamicsCommon.h"
 #include "btBulletCollisionCommon.h"
+#include <oscplugin/osc.h>
 #include <oh/BulletSystem.hpp>
 
 using namespace std;
@@ -412,7 +413,7 @@ bool BulletSystem::tick() {
                             lastPathSection = queryName;
                             /// OSC stuff:
                             oscplugin::ball_coordinates coords;
-                            coords.ball_x = 1;
+                            coords.ball_x = int(queryName[0]);
                             coords.ball_y = 2;
                             coords.ball_z = 3;
                             oscplugin::sendOSCmessage(coords);
@@ -431,23 +432,6 @@ bool BulletSystem::tick() {
                             ));
                         DEBUG_OUTPUT(cout << "bulletpos after reset: " << objects[i]->getBulletState().p << endl;)
                     }
-                    
-                    /// hacks for Rob, CCRMA
-                    /*
-                    //Vector3f size = physicalObjects[i]->meshptr->getScale();
-                    if (objects[i]->mName=="osctest") {
-                        Vector3d position = objects[i]->mMeshptr->getPosition();
-                        if (abs(position.x-oldpos.x)>0.01 || abs(position.y-oldpos.y)>0.01 || abs(position.z-oldpos.z)>0.01) {
-                            oldpos = position;
-                            DEBUG_OUTPUT(cout << "ccrma: sphere moved to: " << position.x << ", " << position.y << ", " << position.z << endl);
-                            oscplugin::ball_coordinates coords;
-                            coords.ball_x = (float)position.x;
-                            coords.ball_y = (float)position.y;
-                            coords.ball_z = (float)position.z;
-                            oscplugin::sendOSCmessage(coords);
-                        }
-                    }
-                    */
                 }
             }
             dynamicsWorld->stepSimulation(delta,10);
@@ -496,6 +480,8 @@ bool BulletSystem::tick() {
                         << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     }
                     dispatcher->collisionPairs[i->first]=2;
+
+                    /// CCRMA: send OSC message
                 }
                 else if (i->second==2) {        /// didn't get flagged again; collision now over
                     if (b1->colMsg & b0->colMask) {
