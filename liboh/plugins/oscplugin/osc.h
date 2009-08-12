@@ -12,18 +12,15 @@
 
 namespace oscplugin {
 
-struct ball_coordinates {
-    float ball_x;
-    float ball_y;
-    float ball_z;
-    char *hostname;
-    char *port;
-    int clientnum;
-    float origin[3];
-    
-    ball_coordinates() {
-        port=0;
-    }
+struct mito_data {
+    int user_id;
+    int path_id;
+    int cell_id;
+    float global_x;
+    float global_y;
+    float global_z;
+    float relative_x;
+    float relative_y;
 };
 
 struct camera_coordinates {
@@ -70,8 +67,8 @@ typedef struct {
 
 
 //void sendOSCmessage(int clientno, char *hostname, char *portnumber);
-void sendOSCbundle(ball_coordinates currentClient);
-void sendOSCmessage(ball_coordinates currentClient);
+//void sendOSCbundle(ball_coordinates currentClient);
+void sendOSCmessage(mito_data data);
 
 //void sendOSCbundle_projectile(osc_projectile_vars currentProjectile);
 //void sendOSCmessage_projectile(osc_projectile_vars currentProjectile); //, char *type);

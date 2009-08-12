@@ -380,7 +380,7 @@ bool BulletSystem::tick() {
     static Task::DeltaTime waittime = Task::DeltaTime::seconds(0.02);
     static int mode = 0;
     static Vector3f lastAvatarLinearVel = Vector3f();
-    static string lastPathSection="nothing";
+    static string lastPathSection="path_00_00";
     Task::AbsTime now = Task::AbsTime::now();
     Task::DeltaTime delta;
     positionOrientation po;
@@ -393,13 +393,11 @@ bool BulletSystem::tick() {
         if ((now-mStartTime) > 10.0) {
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->mActive) {
-                    string temp=objects[i]->mName;
-                    temp.resize(6);
-                    if (temp=="avatar") {
+                    if (objects[i]->mName.substr(0,6) == "Avatar") {
                         double dist;
                         Vector3f norm;
                         SpaceObjectReference sor;
-                        string queryName="nothing";
+                        string queryName="path_00_00";
                         if (queryRay(objects[i]->mMeshptr->getPosition(), Vector3f(0,-1,0), 20.0, objects[i]->mMeshptr, dist, norm, sor)) {
                             queryName=mLastQuery->mName;
                             cout << "dbm debug: queryRay returns distance: " << dist << " normal: " << norm
@@ -411,13 +409,26 @@ bool BulletSystem::tick() {
                         if (queryName != lastPathSection) {
                             cout << "dbm debug OSC event: stepped off " << lastPathSection << " and onto " << queryName << endl;
                             lastPathSection = queryName;
-                            /// OSC stuff:
-                            oscplugin::ball_coordinates coords;
-                            coords.ball_x = int(queryName[0]);
-                            coords.ball_y = 2;
-                            coords.ball_z = 3;
-                            oscplugin::sendOSCmessage(coords);
                         }
+                            /// OSC stuff:
+                        Vector3d pos = objects[i]->mMeshptr->getPosition();
+                        oscplugin::mito_data data;
+                        
+                        istringstream suser(objects[i]->mName.substr(7));
+                        suser >> data.user_id;
+                        
+                        istringstream spath(queryName.substr(5,2));
+                        spath >> data.path_id;
+                        
+                        istringstream scell(queryName.substr(8));
+                        scell >> data.cell_id;
+                        
+                        data.global_x=pos.x;
+                        data.global_y=pos.y;
+                        data.global_z=pos.z;
+                        data.relative_x=0;
+                        data.relative_y=0;
+                        oscplugin::sendOSCmessage(data);
                     }
                     else if (objects[i]->mMeshptr->getPosition() != objects[i]->getBulletState().p ||
                              objects[i]->mMeshptr->getOrientation() != objects[i]->getBulletState().o) {
@@ -438,9 +449,7 @@ bool BulletSystem::tick() {
 
             for (unsigned int i=0; i<objects.size(); i++) {
                 if (objects[i]->mActive) {
-                    string temp=objects[i]->mName;
-                    temp.resize(6);
-                    if (temp!="avatar") {
+                    if (objects[i]->mName.substr(0,6) != "Avatar") {
                         po = objects[i]->getBulletState();
                         DEBUG_OUTPUT(cout << "    dbm: object, " << objects[i]->mName << ", delta, "
                                      << delta.toSeconds() << ", newpos, " << po.p << "obj: " << objects[i] << endl);
