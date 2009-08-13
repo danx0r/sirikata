@@ -309,7 +309,11 @@ void BulletObj::buildBulletBody(const unsigned char* meshdata, int meshbytes) {
 }
 
 void BulletObj::requestLocation(const Protocol::ObjLoc& reqLoc) {
-    cout << "position request received " << reqLoc.has_velocity() << endl;
+    cout << "position request received " << endl;
+    if (reqLoc.has_velocity()) {
+        btVector3 btvel(reqLoc.velocity().x, reqLoc.velocity().y, reqLoc.velocity().z);
+        mBulletBodyPtr->setLinearVelocity(btvel);
+    }
 }
 
 Task::EventResponse BulletSystem::downloadFinished(Task::EventPtr evbase, BulletObj* bullobj) {
