@@ -376,7 +376,7 @@ class BulletSystem: public TimeSteppedQueryableSimulation {
     btSequentialImpulseConstraintSolver* solver;
     btCollisionShape* groundShape;
     btRigidBody* groundBody;
-    BulletObj* mLastQuery;
+    bulletObj* mLastQuery;
 
     /// ccrma hack:
     Vector3d oldpos;
