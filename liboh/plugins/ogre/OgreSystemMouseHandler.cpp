@@ -54,6 +54,7 @@
 
 #include "WebViewManager.hpp"
 #include "CameraPath.hpp"
+#include "Ogre_Sirikata.pbj.hpp"
 
 namespace Sirikata {
 namespace Graphics {
@@ -592,6 +593,8 @@ private:
 
         ProxyObjectPtr cam = getTopLevelParent(mParent->mPrimaryCamera->getProxyPtr());
         if (!cam) return;
+        
+        /*
         Location loc = cam->extrapolateLocation(now);
         const Quaternion &orient = loc.getOrientation();
 
@@ -599,8 +602,14 @@ private:
         loc.setAngularSpeed(0);
 
         cam->setLocation(now, loc);
+        */
+        Location loc = cam->extrapolateLocation(now);
+        const Quaternion &orient = loc.getOrientation();
+        Protocol::ObjLoc rloc;
+        rloc.set_velocity((orient * dir) * amount * WORLD_SCALE);
+        rloc.set_angular_speed(0);        
+        cam->requestLocation(rloc);
     }
-
     void rotateAction(Vector3f about, float amount) {
         Task::AbsTime now(Task::AbsTime::now());
         float WORLD_SCALE = mParent->mInputManager->mWorldScale->as<float>();

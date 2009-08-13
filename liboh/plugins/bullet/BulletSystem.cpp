@@ -111,6 +111,7 @@ void BulletObj::setPhysical (const PhysicalParameters &pp) {
     case PhysicalParameters::Disabled:
         DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: Disabled" << endl);
         mActive = false;
+        mMeshptr->setLocationAuthority(0);
         mDynamic = false;
         break;
     case PhysicalParameters::Static:
@@ -137,6 +138,7 @@ void BulletObj::setPhysical (const PhysicalParameters &pp) {
         po.o = mMeshptr->getOrientation();
         Vector3f size = mMeshptr->getScale();
         system->addPhysicalObject(this, po, pp.density, pp.friction, pp.bounce, pp.hull, size.x, size.y, size.z);
+        mMeshptr->setLocationAuthority(this);
     }
 }
 
@@ -304,6 +306,10 @@ void BulletObj::buildBulletBody(const unsigned char* meshdata, int meshbytes) {
     mBulletBodyPtr=body;
     mActive=true;
     system->bt2siri[body]=this;
+}
+
+void BulletObj::requestLocation(const Protocol::ObjLoc& reqLoc) {
+    cout << "position request received " << reqLoc.has_velocity() << endl;
 }
 
 Task::EventResponse BulletSystem::downloadFinished(Task::EventPtr evbase, BulletObj* bullobj) {

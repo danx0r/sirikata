@@ -79,6 +79,7 @@ private:
 
     TimedWeightedExtrapolator<Location,UpdateNeeded> mLocation;
     SpaceObjectReference mParentId;
+    PositionAuthority* mPositionAuthority;
 protected:
     /// Notification that the Parent has been destroyed.
     virtual void destroyed();
@@ -153,6 +154,16 @@ public:
         Space that we have moved, but it is the first step in moving a local object. */
     void setLocation(TemporalValue<Location>::Time timeStamp,
                              const Location&location);
+    
+    /** requests a new location for this object.  May involve physics 
+    or other authority to actually move object */
+    void requestLocation(const Protocol::ObjLoc& reqLoc);
+
+    /** set current authority */
+    void setLocationAuthority(PositionAuthority* auth) {
+        mPositionAuthority = auth;
+    }
+    
     /** @see setLocation. This disables interpolation from the last update. */
     void resetLocation(TemporalValue<Location>::Time timeStamp,
                                const Location&location);
