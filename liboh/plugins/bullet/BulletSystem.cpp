@@ -138,7 +138,7 @@ void BulletObj::setPhysical (const PhysicalParameters &pp) {
         po.o = mMeshptr->getOrientation();
         Vector3f size = mMeshptr->getScale();
         system->addPhysicalObject(this, po, pp.density, pp.friction, pp.bounce, pp.hull, size.x, size.y, size.z);
-        mMeshptr->setLocationAuthority(this);
+        //mMeshptr->setLocationAuthority(this);
     }
 }
 

@@ -109,22 +109,32 @@ bool ProxyObject::sendMessage(MemoryReference message) const {
     }
 }
 
-
 void ProxyObject::setLocation(TemporalValue<Location>::Time timeStamp,
                               const Location&location) {
     mLocation.updateValue(timeStamp,
                           location);
     PositionProvider::notify(&PositionListener::updateLocation, timeStamp, location);
 }
+
+Task::AbsTime startTime(Task::AbsTime::now());
+
 void ProxyObject::requestLocation(TemporalValue<Location>::Time timeStamp, const Protocol::ObjLoc& reqLoc) {
     if (mlocationAuthority) {
         mlocationAuthority->requestLocation(timeStamp, reqLoc);
     }
     else {
+        std::cout << "dbm debug reqLoc set: " << (timeStamp-startTime).toSeconds() << std::endl;
         Location loc;
         loc = mLocation.lastValue();
-        if (reqLoc.has_position()) loc.setPosition(reqLoc.position());
-        if (reqLoc.has_velocity()) loc.setVelocity(reqLoc.velocity());
+        std::cout << "dbm debug    mLocation position: " << loc.getPosition() << std::endl;
+        if (reqLoc.has_position()) {
+            loc.setPosition(reqLoc.position());
+            std::cout << "dbm debug    reqLoc setPosition: " << reqLoc.position() << std::endl;
+        }
+        if (reqLoc.has_velocity()) {
+            loc.setVelocity(reqLoc.velocity());
+            std::cout << "dbm debug    reqLoc setVelocity: " << reqLoc.velocity() << std::endl;
+        }
         if (reqLoc.has_rotational_axis()) loc.setAxisOfRotation(reqLoc.rotational_axis());
         if (reqLoc.has_angular_speed()) loc.setAngularSpeed(reqLoc.angular_speed());
         setLocation(timeStamp, loc);
