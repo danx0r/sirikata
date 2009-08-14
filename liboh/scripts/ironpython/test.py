@@ -62,7 +62,7 @@ class exampleclass:
                     nameStruct.ParseFromString(field.data)
                     myName = nameStruct.value
         print "Object",uuid,"has name",myName
-        if myName=="xAvatar_01":
+        if myName=="Avatar_01":
             rws=pbPer.ReadWriteSet()
             se=rws.writes.add()
             se.field_name="Parent"
