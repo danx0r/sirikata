@@ -606,8 +606,8 @@ private:
         rloc.set_velocity((orient * dir) * amount * WORLD_SCALE);
         rloc.set_angular_speed(0);        
  /// get rid of these
- rloc.set_position(loc.getPosition());
- rloc.set_rotational_axis(loc.getAxisOfRotation());
+ //rloc.set_position(loc.getPosition());
+ //rloc.set_rotational_axis(loc.getAxisOfRotation());
         cam->requestLocation(now, rloc);
     }
     void rotateAction(Vector3f about, float amount) {

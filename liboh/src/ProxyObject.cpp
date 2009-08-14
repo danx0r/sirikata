@@ -125,7 +125,7 @@ void ProxyObject::requestLocation(TemporalValue<Location>::Time timeStamp, const
     else {
         std::cout << "dbm debug reqLoc set: " << (timeStamp-startTime).toSeconds() << std::endl;
         Location loc;
-        loc = mLocation.lastValue();
+        loc = extrapolateLocation(timeStamp);
         std::cout << "dbm debug    mLocation position: " << loc.getPosition() << std::endl;
         if (reqLoc.has_position()) {
             loc.setPosition(reqLoc.position());
