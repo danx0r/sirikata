@@ -314,6 +314,13 @@ void BulletObj::requestLocation(TemporalValue<Location>::Time timeStamp, const P
         btVector3 btvel(reqLoc.velocity().x, reqLoc.velocity().y, reqLoc.velocity().z);
         mBulletBodyPtr->setLinearVelocity(btvel);
     }
+    if (reqLoc.has_angular_speed()) {
+        btVector3 btangvel(0,0,0);
+        if (reqLoc.angular_speed()==0) {
+            mBulletBodyPtr->setAngularVelocity(btangvel);
+        }
+        else cout << "dbm debug: need to implement non-zero ang speed, get axis, etc" << endl;
+    }
 }
 
 Task::EventResponse BulletSystem::downloadFinished(Task::EventPtr evbase, BulletObj* bullobj) {
