@@ -309,7 +309,6 @@ void BulletObj::buildBulletBody(const unsigned char* meshdata, int meshbytes) {
 }
 
 void BulletObj::requestLocation(TemporalValue<Location>::Time timeStamp, const Protocol::ObjLoc& reqLoc) {
-    cout << "dbm debug location request received " << endl;
     if (reqLoc.has_velocity()) {
         btVector3 btvel(reqLoc.velocity().x, reqLoc.velocity().y, reqLoc.velocity().z);
         mBulletBodyPtr->setLinearVelocity(btvel);

@@ -616,11 +616,17 @@ private:
         Location loc = cam->extrapolateLocation(now);
         const Quaternion &orient = loc.getOrientation();
 
+        /*
         loc.setAxisOfRotation(about);
         loc.setAngularSpeed(amount);
         loc.setVelocity(Vector3f(0,0,0));
 
         cam->setLocation(now, loc);
+        */
+        Protocol::ObjLoc rloc;
+        rloc.set_rotational_axis(about);
+        rloc.set_angular_speed(amount);
+        cam->requestLocation(now, rloc);
     }
 
     void stableRotateAction(float dir, float amount) {
