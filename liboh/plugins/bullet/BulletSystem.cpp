@@ -90,10 +90,10 @@ SIRIKATA_PLUGIN_EXPORT_C int refcount() {
 namespace Sirikata {
 
 const ObjectReference&BulletObj::getObjectReference()const {
-	return mMeshptr->getObjectReference().object();
+    return mMeshptr->getObjectReference().object();
 }
 const SpaceID&BulletObj::getSpaceID()const {
-	return mMeshptr->getObjectReference().space();
+    return mMeshptr->getObjectReference().space();
 }
 
 void BulletObj::meshChanged (const URI &newMesh) {
@@ -314,11 +314,17 @@ void BulletObj::requestLocation(TemporalValue<Location>::Time timeStamp, const P
         mBulletBodyPtr->setLinearVelocity(btvel);
     }
     if (reqLoc.has_angular_speed()) {
-        btVector3 btangvel(0,0,0);
-        if (reqLoc.angular_speed()==0) {
-            mBulletBodyPtr->setAngularVelocity(btangvel);
+        Vector3f axis(0,1,0);
+        if (reqLoc.has_rotational_axis()) {
+            axis = reqLoc.rotational_axis();
         }
-        else cout << "dbm debug: need to implement non-zero ang speed, get axis, etc" << endl;
+        else if (reqLoc.angular_speed() != 0) {
+            cout << "ERROR -- please don't specify an angular speed without an axis" << endl;
+            assert(false);
+        }
+        axis *= reqLoc.angular_speed();
+        btVector3 btangvel(axis.x, axis.y, axis.z);
+        mBulletBodyPtr->setAngularVelocity(btangvel);
     }
 }
 
@@ -442,95 +448,96 @@ bool BulletSystem::tick() {
             */
 
             /// collision messages
-			std::map<ObjectReference,RoutableMessageBody> mBeginCollisionMessagesToSend;
-			std::map<ObjectReference,RoutableMessageBody> mEndCollisionMessagesToSend;
-			BulletObj* anExampleCollidingMesh=NULL;
+            std::map<ObjectReference,RoutableMessageBody> mBeginCollisionMessagesToSend;
+            std::map<ObjectReference,RoutableMessageBody> mEndCollisionMessagesToSend;
+            BulletObj* anExampleCollidingMesh=NULL;
             for (customDispatch::CollisionPairMap::iterator i=dispatcher->collisionPairs.begin();
-                 i != dispatcher->collisionPairs.end(); /*increment in if*/) {
+                    i != dispatcher->collisionPairs.end(); /*increment in if*/) {
                 BulletObj* b0=anExampleCollidingMesh=i->first.getLower();
                 BulletObj* b1=i->first.getHigher();
                 ObjectReference b0id=b0->getObjectReference();
                 ObjectReference b1id=b1->getObjectReference();
-                
+
                 if (i->second.collidedThisFrame()) {             /// recently colliding; send msg & change mode
                     if (!i->second.collidedLastFrame()) {
                         if (b1->colMsg & b0->colMask) {
-							RoutableMessageBody *body=&mBeginCollisionMessagesToSend[b1id];
-							
-							Physics::Protocol::CollisionBegin collide;
-							collide.set_timestamp(now);
-							collide.set_other_object_reference(b0id.getAsUUID());
-							for (std::vector<customDispatch::ActiveCollisionState::PointCollision>::iterator iter=i->second.mPointCollisions.begin(),iterend=i->second.mPointCollisions.end();iter!=iterend;++iter) {
-								collide.add_this_position(iter->mWorldOnHigher);
-								collide.add_other_position(iter->mWorldOnLower);
-								collide.add_this_normal(iter->mNormalWorldOnHigher);
-								collide.add_impulse(iter->mAppliedImpulse);
+                            RoutableMessageBody *body=&mBeginCollisionMessagesToSend[b1id];
 
-							}
-							collide.SerializeToString(body->add_message("BegCol"));
+                            Physics::Protocol::CollisionBegin collide;
+                            collide.set_timestamp(now);
+                            collide.set_other_object_reference(b0id.getAsUUID());
+                            for (std::vector<customDispatch::ActiveCollisionState::PointCollision>::iterator iter=i->second.mPointCollisions.begin(),iterend=i->second.mPointCollisions.end();iter!=iterend;++iter) {
+                                collide.add_this_position(iter->mWorldOnHigher);
+                                collide.add_other_position(iter->mWorldOnLower);
+                                collide.add_this_normal(iter->mNormalWorldOnHigher);
+                                collide.add_impulse(iter->mAppliedImpulse);
+
+                            }
+                            collide.SerializeToString(body->add_message("BegCol"));
                             cout << "   begin collision msg: " << b0->mName << " --> " << b1->mName
-                                 << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
+                            << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                         }
                         if (b0->colMsg & b1->colMask) {
-							RoutableMessageBody *body=&mBeginCollisionMessagesToSend[b0id];
-							
-							Physics::Protocol::CollisionBegin collide;
-							collide.set_timestamp(now);
-							collide.set_other_object_reference(b1id.getAsUUID());
-							for (std::vector<customDispatch::ActiveCollisionState::PointCollision>::iterator iter=i->second.mPointCollisions.begin(),iterend=i->second.mPointCollisions.end();iter!=iterend;++iter) {
-								collide.add_other_position(iter->mWorldOnHigher);
-								collide.add_this_position(iter->mWorldOnLower);
-								collide.add_this_normal(-iter->mNormalWorldOnHigher);
-								collide.add_impulse(iter->mAppliedImpulse);
+                            RoutableMessageBody *body=&mBeginCollisionMessagesToSend[b0id];
 
-							}
-							collide.SerializeToString(body->add_message("BegCol"));
+                            Physics::Protocol::CollisionBegin collide;
+                            collide.set_timestamp(now);
+                            collide.set_other_object_reference(b1id.getAsUUID());
+                            for (std::vector<customDispatch::ActiveCollisionState::PointCollision>::iterator iter=i->second.mPointCollisions.begin(),iterend=i->second.mPointCollisions.end();iter!=iterend;++iter) {
+                                collide.add_other_position(iter->mWorldOnHigher);
+                                collide.add_this_position(iter->mWorldOnLower);
+                                collide.add_this_normal(-iter->mNormalWorldOnHigher);
+                                collide.add_impulse(iter->mAppliedImpulse);
+
+                            }
+                            collide.SerializeToString(body->add_message("BegCol"));
                             cout << "   begin collision msg: " << b1->mName << " --> " << b0->mName
-                                 << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
-                        }     
-                    }                    
+                            << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
+                        }
+                    }
                     i->second.resetCollisionFlag();
                     ++i;
-                }else {        /// didn't get flagged again; collision now over
+                }
+                else {        /// didn't get flagged again; collision now over
                     assert(i->second.collidedLastFrame());
                     if (b1->colMsg & b0->colMask) {
-						RoutableMessageBody *body=&mEndCollisionMessagesToSend[b1id];
-						
-						Physics::Protocol::CollisionEnd collide;
-						collide.set_timestamp(now);
-						collide.set_other_object_reference(b0id.getAsUUID());
-						collide.SerializeToString(body->add_message("EndCol"));
-						
-						cout << "     end collision msg: " << b0->mName << " --> " << b1->mName
+                        RoutableMessageBody *body=&mEndCollisionMessagesToSend[b1id];
+
+                        Physics::Protocol::CollisionEnd collide;
+                        collide.set_timestamp(now);
+                        collide.set_other_object_reference(b0id.getAsUUID());
+                        collide.SerializeToString(body->add_message("EndCol"));
+
+                        cout << "     end collision msg: " << b0->mName << " --> " << b1->mName
                         << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     }
                     if (b0->colMsg & b1->colMask) {
-						RoutableMessageBody *body=&mEndCollisionMessagesToSend[b0id];
-						
-						Physics::Protocol::CollisionEnd collide;
-						collide.set_timestamp(now);
-						collide.set_other_object_reference(b1id.getAsUUID());
-						collide.SerializeToString(body->add_message("EndCol"));
+                        RoutableMessageBody *body=&mEndCollisionMessagesToSend[b0id];
+
+                        Physics::Protocol::CollisionEnd collide;
+                        collide.set_timestamp(now);
+                        collide.set_other_object_reference(b1id.getAsUUID());
+                        collide.SerializeToString(body->add_message("EndCol"));
                         cout << "     end collision msg: " << b1->mName << " --> " << b0->mName
                         << " time: " << (Task::AbsTime::now()-mStartTime).toSeconds() << endl;
                     }
                     dispatcher->collisionPairs.erase(i++);
                 }
-				for (std::map<ObjectReference,RoutableMessageBody>*whichMessages=&mBeginCollisionMessagesToSend;true;whichMessages=&mEndCollisionMessagesToSend) {//send all items from map 1, then all items from map 2 (for loop of size 2)
-					for (std::map<ObjectReference,RoutableMessageBody>::iterator iter=whichMessages->begin(),iterend=whichMessages->end();iter!=iterend;++iter) {
-						RoutableMessageHeader hdr;
-						hdr.set_destination_object(iter->first);
-						hdr.set_destination_space(anExampleCollidingMesh->getSpaceID());
-						hdr.set_source_object(ObjectReference::spaceServiceID());
-						hdr.set_source_port(Services::PHYSICS);
-						std::string body;
-						iter->second.SerializeToString(&body);
-						sendMessage(hdr,MemoryReference(body));
-					}
-					if (whichMessages==&mEndCollisionMessagesToSend) {
-						break;
-					}
-				}
+                for (std::map<ObjectReference,RoutableMessageBody>*whichMessages=&mBeginCollisionMessagesToSend;true;whichMessages=&mEndCollisionMessagesToSend) {//send all items from map 1, then all items from map 2 (for loop of size 2)
+                    for (std::map<ObjectReference,RoutableMessageBody>::iterator iter=whichMessages->begin(),iterend=whichMessages->end();iter!=iterend;++iter) {
+                        RoutableMessageHeader hdr;
+                        hdr.set_destination_object(iter->first);
+                        hdr.set_destination_space(anExampleCollidingMesh->getSpaceID());
+                        hdr.set_source_object(ObjectReference::spaceServiceID());
+                        hdr.set_source_port(Services::PHYSICS);
+                        std::string body;
+                        iter->second.SerializeToString(&body);
+                        sendMessage(hdr,MemoryReference(body));
+                    }
+                    if (whichMessages==&mEndCollisionMessagesToSend) {
+                        break;
+                    }
+                }
             }
         }
     }
@@ -552,7 +559,8 @@ void customDispatch::ActiveCollisionState::collide(BulletObj* first, BulletObj* 
             mPointCollisions[i].mWorldOnLower=posB;
             mPointCollisions[i].mWorldOnHigher=posA;
             mPointCollisions[i].mNormalWorldOnHigher=-nrmB;
-        }else {
+        }
+        else {
             mPointCollisions[i].mWorldOnLower=posA;
             mPointCollisions[i].mWorldOnHigher=posB;
             mPointCollisions[i].mNormalWorldOnHigher=nrmB;
@@ -720,19 +728,21 @@ struct  raycastCallback : public btCollisionWorld::RayResultCallback {
     }
 };
 bool BulletSystem::forwardMessagesTo(MessageService*ms) {
-	messageServices.push_back(ms);
-	return true;
+    messageServices.push_back(ms);
+    return true;
 }
-bool BulletSystem::endForwardingMessagesTo(MessageService*ms) {	
-	bool retval=false;
-	do {
-		std::vector<MessageService*>::iterator where=std::find(messageServices.begin(),messageServices.end(),ms);
-		if (where!=messageServices.end()){
-			messageServices.erase(where);
-			retval=true;
-		} else break;
-	}while (true);
-	return retval;
+bool BulletSystem::endForwardingMessagesTo(MessageService*ms) {
+    bool retval=false;
+    do {
+        std::vector<MessageService*>::iterator where=std::find(messageServices.begin(),messageServices.end(),ms);
+        if (where!=messageServices.end()) {
+            messageServices.erase(where);
+            retval=true;
+        }
+        else break;
+    }
+    while (true);
+    return retval;
 }
 
 void BulletSystem::processMessage(const RoutableMessageHeader&mh, MemoryReference message_body) {
@@ -740,9 +750,9 @@ void BulletSystem::processMessage(const RoutableMessageHeader&mh, MemoryReferenc
 }
 
 void BulletSystem::sendMessage(const RoutableMessageHeader&mh, MemoryReference message_body) {
-	for (vector<MessageService*>::iterator i=messageServices.begin(),ie=messageServices.end();i!=ie;++i) {
-		(*i)->processMessage(mh,message_body);
-	}
+    for (vector<MessageService*>::iterator i=messageServices.begin(),ie=messageServices.end();i!=ie;++i) {
+        (*i)->processMessage(mh,message_body);
+    }
 }
 
 bool BulletSystem::queryRay(const Vector3d& position,

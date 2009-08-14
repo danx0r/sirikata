@@ -123,20 +123,20 @@ void ProxyObject::requestLocation(TemporalValue<Location>::Time timeStamp, const
         mlocationAuthority->requestLocation(timeStamp, reqLoc);
     }
     else {
-        std::cout << "dbm debug reqLoc set: " << (timeStamp-startTime).toSeconds() << std::endl;
         Location loc;
         loc = extrapolateLocation(timeStamp);
-        std::cout << "dbm debug    mLocation position: " << loc.getPosition() << std::endl;
         if (reqLoc.has_position()) {
             loc.setPosition(reqLoc.position());
-            std::cout << "dbm debug    reqLoc setPosition: " << reqLoc.position() << std::endl;
         }
         if (reqLoc.has_velocity()) {
             loc.setVelocity(reqLoc.velocity());
-            std::cout << "dbm debug    reqLoc setVelocity: " << reqLoc.velocity() << std::endl;
         }
-        if (reqLoc.has_rotational_axis()) loc.setAxisOfRotation(reqLoc.rotational_axis());
-        if (reqLoc.has_angular_speed()) loc.setAngularSpeed(reqLoc.angular_speed());
+        if (reqLoc.has_rotational_axis()) {
+            loc.setAxisOfRotation(reqLoc.rotational_axis());
+        }
+        if (reqLoc.has_angular_speed()) {
+            loc.setAngularSpeed(reqLoc.angular_speed());
+        }
         setLocation(timeStamp, loc);
     }
 }
