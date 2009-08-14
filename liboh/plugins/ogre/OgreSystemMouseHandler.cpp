@@ -603,7 +603,7 @@ private:
         cam->setLocation(now, loc);
         */
         Protocol::ObjLoc rloc;
-        rloc.set_velocity((orient * dir) * amount * WORLD_SCALE);
+        rloc.set_velocity((orient * dir) * amount * WORLD_SCALE * .5);
         rloc.set_angular_speed(0);        
         cam->requestLocation(now, rloc);
     }
