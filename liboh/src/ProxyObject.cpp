@@ -35,7 +35,11 @@
 #include <util/Extrapolation.hpp>
 #include <oh/PositionListener.hpp>
 #include <oh/ProxyManager.hpp>
-#include <util/RoutableMessageHeader.hpp>
+#include "Bullet_Sirikata.pbj.hpp"
+#include "Bullet_Physics.pbj.hpp"
+#include "util/RoutableMessageBody.hpp"
+#include "util/RoutableMessageHeader.hpp"
+#include "util/KnownServices.hpp"
 
 namespace Sirikata {
 
@@ -48,7 +52,7 @@ ProxyObject::ProxyObject(ProxyManager *man, const SpaceObjectReference&id)
                            Vector3f(0,0,0),Vector3f(0,1,0),0),
                   UpdateNeeded()),
         mParentId(SpaceObjectReference::null()),
-        mPositionAuthority(0) {}
+        mlocationAuthority(0) {}
 
 ProxyObject::~ProxyObject() {}
 
@@ -112,13 +116,18 @@ void ProxyObject::setLocation(TemporalValue<Location>::Time timeStamp,
                           location);
     PositionProvider::notify(&PositionListener::updateLocation, timeStamp, location);
 }
-void ProxyObject::requestLocation(const Protocol::ObjLoc& reqLoc) {
-    if (mPositionAuthority) {
-        mPositionAuthority->requestLocation(reqLoc);
+void ProxyObject::requestLocation(TemporalValue<Location>::Time timeStamp, const Protocol::ObjLoc& reqLoc) {
+    if (mlocationAuthority) {
+        mlocationAuthority->requestLocation(timeStamp, reqLoc);
     }
     else {
-        //Location* loc = getLocation(/* */);
-        //setLocation(loc/* need to convert reqLoc to loc*/);
+        Location loc;
+        loc = mLocation.lastValue();
+        if (reqLoc.has_position()) loc.setPosition(reqLoc.position());
+        if (reqLoc.has_velocity()) loc.setVelocity(reqLoc.velocity());
+        if (reqLoc.has_rotational_axis()) loc.setAxisOfRotation(reqLoc.rotational_axis());
+        if (reqLoc.has_angular_speed()) loc.setAngularSpeed(reqLoc.angular_speed());
+        setLocation(timeStamp, loc);
     }
 }
 void ProxyObject::resetLocation(TemporalValue<Location>::Time timeStamp,

@@ -56,10 +56,10 @@ public:
 
 };
 
-class SIRIKATA_OH_EXPORT PositionAuthority {
+class SIRIKATA_OH_EXPORT LocationAuthority {
 public:
-    virtual ~PositionAuthority() {}
-    virtual void requestLocation (const Protocol::ObjLoc& reqLoc) = 0;
+    virtual ~LocationAuthority() {}
+    virtual void requestLocation (Time timestamp, const Protocol::ObjLoc& reqLoc) = 0;
 };
 }
 #endif

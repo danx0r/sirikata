@@ -594,21 +594,18 @@ private:
         ProxyObjectPtr cam = getTopLevelParent(mParent->mPrimaryCamera->getProxyPtr());
         if (!cam) return;
         
-        /*
         Location loc = cam->extrapolateLocation(now);
         const Quaternion &orient = loc.getOrientation();
-
+        /*
         loc.setVelocity((orient * dir) * amount * WORLD_SCALE);
         loc.setAngularSpeed(0);
 
         cam->setLocation(now, loc);
         */
-        Location loc = cam->extrapolateLocation(now);
-        const Quaternion &orient = loc.getOrientation();
         Protocol::ObjLoc rloc;
         rloc.set_velocity((orient * dir) * amount * WORLD_SCALE);
         rloc.set_angular_speed(0);        
-        cam->requestLocation(rloc);
+        cam->requestLocation(now, rloc);
     }
     void rotateAction(Vector3f about, float amount) {
         Task::AbsTime now(Task::AbsTime::now());

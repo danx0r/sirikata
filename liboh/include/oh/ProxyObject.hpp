@@ -79,7 +79,7 @@ private:
 
     TimedWeightedExtrapolator<Location,UpdateNeeded> mLocation;
     SpaceObjectReference mParentId;
-    PositionAuthority* mPositionAuthority;
+    LocationAuthority* mlocationAuthority;
 protected:
     /// Notification that the Parent has been destroyed.
     virtual void destroyed();
@@ -157,11 +157,11 @@ public:
     
     /** requests a new location for this object.  May involve physics 
     or other authority to actually move object */
-    void requestLocation(const Protocol::ObjLoc& reqLoc);
+    void requestLocation(TemporalValue<Location>::Time timeStamp, const Protocol::ObjLoc& reqLoc);
 
     /** set current authority */
-    void setLocationAuthority(PositionAuthority* auth) {
-        mPositionAuthority = auth;
+    void setLocationAuthority(LocationAuthority* auth) {
+        mlocationAuthority = auth;
     }
     
     /** @see setLocation. This disables interpolation from the last update. */

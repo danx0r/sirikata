@@ -48,7 +48,7 @@ using namespace std;
 using std::tr1::placeholders::_1;
 static int core_plugin_refcount = 0;
 
-//#define DEBUG_OUTPUT(x) x
+#define DEBUG_OUTPUT2(x) x
 #define DEBUG_OUTPUT(x)
 
 SIRIKATA_PLUGIN_EXPORT_C void init() {
@@ -308,8 +308,8 @@ void BulletObj::buildBulletBody(const unsigned char* meshdata, int meshbytes) {
     system->bt2siri[body]=this;
 }
 
-void BulletObj::requestLocation(const Protocol::ObjLoc& reqLoc) {
-    cout << "position request received " << endl;
+void BulletObj::requestLocation(TemporalValue<Location>::Time timeStamp, const Protocol::ObjLoc& reqLoc) {
+    cout << "dbm debug location request received " << endl;
     if (reqLoc.has_velocity()) {
         btVector3 btvel(reqLoc.velocity().x, reqLoc.velocity().y, reqLoc.velocity().z);
         mBulletBodyPtr->setLinearVelocity(btvel);
