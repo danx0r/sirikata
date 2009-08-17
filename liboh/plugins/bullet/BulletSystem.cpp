@@ -102,7 +102,7 @@ void BulletObj::meshChanged (const URI &newMesh) {
 }
 
 void BulletObj::setPhysical (const PhysicalParameters &pp) {
-    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " mesh: " << mMeshname << endl);
+    DEBUG_OUTPUT(cout << "dbm: setPhysical: " << this << " mode=" << pp.mode << " name: " << pp.name << " mesh: " << mMeshname << endl);
     mName = pp.name;
     mHull = pp.hull;
     colMask = pp.colMask;
@@ -137,11 +137,13 @@ void BulletObj::setPhysical (const PhysicalParameters &pp) {
     }
     if (mMeshptr) {
         if (mDynamic && (!mMeshptr->isLocal()) ) {      /// for now, physics ignores dynamic objects on other hosts
+            DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: disabling dynamic&non-local" << endl);
             mActive = false;
             mMeshptr->setLocationAuthority(0);
+            return;
         }
     }
-    if ( (!(pp.mode==PhysicalParameters::Disabled)) && mActive) {
+    if (!(pp.mode==PhysicalParameters::Disabled)) {
         DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: adding to bullet" << endl);
         positionOrientation po;
         po.p = mMeshptr->getPosition();
@@ -701,10 +703,12 @@ BulletSystem::~BulletSystem() {
 
 void BulletSystem::createProxy(ProxyObjectPtr p) {
     ProxyMeshObjectPtr meshptr(tr1::dynamic_pointer_cast<ProxyMeshObject>(p));
-    DEBUG_OUTPUT(cout << "dbm: createProxy ptr:" << meshptr << " mesh: " << meshptr->getMesh() << endl;)
-    objects.push_back(new BulletObj(this));     /// clean up memory!!!
-    objects.back()->mMeshptr = meshptr;
-    meshptr->MeshProvider::addListener(objects.back());
+    if (meshptr) {
+        DEBUG_OUTPUT(cout << "dbm: createProxy ptr:" << meshptr << " mesh: " << meshptr->getMesh() << endl;)
+        objects.push_back(new BulletObj(this));     /// clean up memory!!!
+        objects.back()->mMeshptr = meshptr;
+        meshptr->MeshProvider::addListener(objects.back());
+    }
 }
 
 void BulletSystem::destroyProxy(ProxyObjectPtr p) {
