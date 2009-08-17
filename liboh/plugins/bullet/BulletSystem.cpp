@@ -49,7 +49,7 @@ using std::tr1::placeholders::_1;
 static int core_plugin_refcount = 0;
 
 #define DEBUG_OUTPUT2(x) x
-#define DEBUG_OUTPUT(x)
+#define DEBUG_OUTPUT(x) x
 
 SIRIKATA_PLUGIN_EXPORT_C void init() {
     using namespace Sirikata;
@@ -699,12 +699,10 @@ BulletSystem::~BulletSystem() {
 
 void BulletSystem::createProxy(ProxyObjectPtr p) {
     ProxyMeshObjectPtr meshptr(tr1::dynamic_pointer_cast<ProxyMeshObject>(p));
-    if (meshptr && meshptr->isLocal()) {
-        DEBUG_OUTPUT(cout << "dbm: createProxy ptr:" << meshptr << " mesh: " << meshptr->getMesh() << endl;)
-        objects.push_back(new BulletObj(this));     /// clean up memory!!!
-        objects.back()->mMeshptr = meshptr;
-        meshptr->MeshProvider::addListener(objects.back());
-    }
+    DEBUG_OUTPUT(cout << "dbm: createProxy ptr:" << meshptr << " mesh: " << meshptr->getMesh() << endl;)
+    objects.push_back(new BulletObj(this));     /// clean up memory!!!
+    objects.back()->mMeshptr = meshptr;
+    meshptr->MeshProvider::addListener(objects.back());
 }
 
 void BulletSystem::destroyProxy(ProxyObjectPtr p) {
