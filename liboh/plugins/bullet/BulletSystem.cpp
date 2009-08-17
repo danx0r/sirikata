@@ -135,11 +135,13 @@ void BulletObj::setPhysical (const PhysicalParameters &pp) {
         mShape = ShapeCharacter;
         break;
     }
-    if (mDynamic && (!mMeshptr->isLocal()) ) {      /// for now, physics ignores dynamic objects on other hosts
-        mActive = false;
-        mMeshptr->setLocationAuthority(0);
+    if (mMeshptr) {
+        if (mDynamic && (!mMeshptr->isLocal()) ) {      /// for now, physics ignores dynamic objects on other hosts
+            mActive = false;
+            mMeshptr->setLocationAuthority(0);
+        }
     }
-    else if (!(pp.mode==PhysicalParameters::Disabled)) {
+    if ( (!(pp.mode==PhysicalParameters::Disabled)) && mActive) {
         DEBUG_OUTPUT(cout << "  dbm: debug setPhysical: adding to bullet" << endl);
         positionOrientation po;
         po.p = mMeshptr->getPosition();
